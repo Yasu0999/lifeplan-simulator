@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ライフプランシミュレータ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --primary:#FF8C69;--primary-light:#FFB89A;--primary-dark:#E06040;
+  --secondary:#7BC8A4;--secondary-light:#A8DFC4;
+  --accent:#FFD166;
+  --bg:#FFF9F0;--card:#FFFFFF;
+  --text:#3D2C2C;--text-light:#8B7B7B;--text-muted:#B8A8A8;
+  --border:#F0E0D0;
+  --shadow:0 4px 20px rgba(255,140,105,.15);
+  --radius:16px;--radius-sm:10px;--radius-lg:24px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+#landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;background:linear-gradient(135deg,#FFF9F0 0%,#FFE8D6 50%,#E8F8F0 100%);position:relative;overflow:hidden}
+#landing::before{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(255,209,102,.2) 0%,transparent 70%);top:-100px;right:-100px;border-radius:50%;pointer-events:none}
+#landing::after{content:'';position:absolute;width:300px;height:300px;background:radial-gradient(circle,rgba(123,200,164,.2) 0%,transparent 70%);bottom:-50px;left:-50px;border-radius:50%;pointer-events:none}
+.land-icon{font-size:72px;margin-bottom:20px;animation:float 3s ease-in-out infinite;position:relative;z-index:1}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+#landing h1{font-size:clamp(26px,6vw,46px);font-weight:900;line-height:1.3;margin-bottom:14px;position:relative;z-index:1}
+#landing h1 span{color:var(--primary)}
+#landing .sub{font-size:clamp(13px,3vw,17px);color:var(--text-light);line-height:1.8;margin-bottom:28px;max-width:480px;position:relative;z-index:1}
+.land-feats{display:flex;gap:12px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1}
+.land-feat{background:white;border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;box-shadow:var(--shadow)}
+.btn-start{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;padding:18px 48px;font-size:18px;font-weight:700;border-radius:50px;cursor:pointer;box-shadow:0 6px 20px rgba(255,140,105,.4);transition:all .3s;font-family:'Noto Sans JP',sans-serif;position:relative;z-index:1}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,140,105,.5)}
+.land-note{margin-top:14px;font-size:12px;color:var(--text-muted);position:relative;z-index:1}
+.dl-link{display:inline-block;margin-top:16px;font-size:13px;color:var(--text-light);text-decoration:none;border:1px solid var(--border);border-radius:20px;padding:8px 18px;background:white;transition:all .2s;position:relative;z-index:1}
+.dl-link:hover{border-color:var(--primary);color:var(--primary);background:#FFF5F0}
+#simulator{display:none;min-height:100vh;padding-bottom:60px}
+#simulator.on{display:block}
+.sim-header{background:white;padding:14px 16px;box-shadow:0 2px 10px rgba(0,0,0,.06);position:sticky;top:0;z-index:100}
+.sim-header-inner{max-width:640px;margin:0 auto}
+.sim-brand{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:10px}
+.prog-wrap{display:flex;align-items:center;gap:8px}
+.prog-steps{display:flex;gap:4px;flex:1}
+.prog-step{flex:1;height:6px;border-radius:3px;background:var(--border);transition:background .3s}
+.prog-step.done{background:var(--secondary)}
+.prog-step.cur{background:var(--primary)}
+.prog-txt{font-size:12px;color:var(--text-muted);white-space:nowrap}
+.step-wrap{max-width:640px;margin:0 auto;padding:22px 14px}
+.step-panel{display:none}
+.step-panel.on{display:block;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.step-hd{margin-bottom:22px}
+.step-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:8px}
+.step-title{font-size:21px;font-weight:900;margin-bottom:5px}
+.step-desc{font-size:13px;color:var(--text-light);line-height:1.6}
+.card{background:white;border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:13px;display:flex;align-items:center;gap:7px}
+.card.pen-card{background:linear-gradient(135deg,#F0FFF8,#E0F8F0);border:1px solid var(--secondary-light)}
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:13px;font-weight:500;margin-bottom:7px}
+.fhint{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.6}
+.fi{width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:'Noto Sans JP',sans-serif;color:var(--text);background:white;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+.fi:focus{outline:none;border-color:var(--primary)}
+.iunit{display:flex;align-items:center;gap:8px}
+.iunit .fi{flex:1}
+.unit{font-size:13px;color:var(--text-light);white-space:nowrap;font-weight:500}
+.cg{display:flex;gap:7px;flex-wrap:wrap}
+.cb{flex:1;min-width:72px;padding:11px 8px;border:2px solid var(--border);border-radius:var(--radius-sm);background:white;color:var(--text);font-size:13px;font-weight:500;cursor:pointer;text-align:center;transition:all .2s;font-family:'Noto Sans JP',sans-serif;line-height:1.4}
+.cb:hover{border-color:var(--primary-light);background:#FFF5F0}
+.cb.on{border-color:var(--primary);background:linear-gradient(135deg,#FFF5F0,#FFE8D6);color:var(--primary-dark);font-weight:700}
+.cb small{font-size:10px;font-weight:400;color:var(--text-light);display:block}
+.cb.on small{color:var(--primary-dark)}
+.ws-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ws-grid .cb{min-width:unset;flex:unset}
+.ec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ec{padding:13px 10px;border:2px solid var(--border);border-radius:var(--radius-sm);background:white;cursor:pointer;text-align:center;transition:all .2s;font-family:'Noto Sans JP',sans-serif}
+.ec:hover{border-color:var(--primary-light);background:#FFF5F0}
+.ec.on{border-color:var(--primary);background:linear-gradient(135deg,#FFF5F0,#FFE8D6)}
+.ec .ecr{font-size:14px;font-weight:700}
+.ec .ecl{font-size:11px;color:var(--text-light);margin-top:3px}
+.or-div{display:flex;align-items:center;margin:14px 0 10px;color:var(--text-muted);font-size:12px}
+.or-div::before,.or-div::after{content:'';flex:1;border-top:1px solid var(--border)}
+.or-div span{padding:0 10px}
+.pen-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:white;border-radius:var(--radius-sm);margin-bottom:6px}
+.pen-row .pl{font-size:13px;color:var(--text)}
+.pen-row .pa{font-size:15px;font-weight:700;color:var(--secondary)}
+.pen-total{background:rgba(123,200,164,.15);border-radius:var(--radius-sm);padding:10px 12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+.pen-total .pl{font-size:13px;font-weight:700;color:var(--text)}
+.pen-total .pa{font-size:16px;font-weight:900;color:var(--secondary)}
+.age-disp{text-align:center;font-size:48px;font-weight:900;color:var(--primary);margin:6px 0}
+.age-disp span{font-size:18px;font-weight:500;color:var(--text-light)}
+input[type=range].slider{width:100%;-webkit-appearance:none;appearance:none;height:8px;border-radius:4px;outline:none;cursor:pointer}
+input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;border-radius:50%;background:white;border:3px solid var(--primary);box-shadow:0 2px 8px rgba(255,140,105,.3);cursor:pointer}
+input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:white;border:3px solid var(--primary);cursor:pointer}
+.slider-lbls{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:5px}
+.ot-head{display:grid;grid-template-columns:70px 1fr 90px 32px;gap:7px;font-size:11px;color:var(--text-muted);margin-bottom:4px;align-items:center}
+.ot-row{display:grid;grid-template-columns:70px 1fr 90px 32px;gap:7px;margin-bottom:7px;align-items:center}
+.ot-row .fi{padding:9px 10px;font-size:13px}
+.btn-rm{width:32px;height:32px;border:none;background:#FFE8E8;color:#E06060;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s}
+.btn-rm:hover{background:#FFCCCC}
+.btn-add{width:100%;padding:10px;border:2px dashed var(--secondary);background:transparent;color:var(--secondary);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;font-family:'Noto Sans JP',sans-serif;transition:all .2s}
+.btn-add:hover{background:#F0FFF8}
+.rate-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.rc{padding:15px 8px;border:2px solid var(--border);border-radius:var(--radius-sm);text-align:center;cursor:pointer;transition:all .2s;font-family:'Noto Sans JP',sans-serif}
+.rc:hover{border-color:var(--secondary);background:#F0FFF8}
+.rc.on{border-color:var(--secondary);background:linear-gradient(135deg,#F0FFF8,#D8F8EC)}
+.rc .rv{font-size:24px;font-weight:900;color:var(--secondary)}
+.rc .rl{font-size:11px;color:var(--text-light);margin-top:3px}
+.edu-blk{background:#F6FFF8;border:1px solid var(--secondary-light);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.edu-blk-title{font-size:12px;font-weight:700;color:var(--secondary);margin-bottom:10px}
+.uni-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.uni-grid .cb{min-width:unset;flex:unset;font-size:12px;padding:10px 6px}
+.info-box{background:#F8F8F8;border-radius:var(--radius-sm);padding:14px;font-size:13px;color:var(--text-light);line-height:1.6;text-align:center}
+.nav-btns{display:flex;gap:10px;margin-top:22px}
+.btn-back{flex:1;padding:15px;border:2px solid var(--border);background:white;color:var(--text-light);border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s}
+.btn-back:hover{border-color:var(--text-light)}
+.btn-next{flex:2;padding:15px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;box-shadow:0 4px 15px rgba(255,140,105,.4);transition:all .3s}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 7px 22px rgba(255,140,105,.5)}
+#results{display:none}
+#results.on{display:block}
+.res-hd{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:36px 20px;text-align:center}
+.res-hd h2{font-size:22px;font-weight:900;margin-bottom:7px}
+.res-hd p{font-size:14px;opacity:.9}
+.res-body{max-width:800px;margin:0 auto;padding:22px 14px}
+.rc2{background:white;border-radius:var(--radius);padding:22px;margin-bottom:18px;box-shadow:var(--shadow)}
+.rc2-title{font-size:15px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:7px}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(min-width:600px){.sum-grid{grid-template-columns:repeat(4,1fr)}}
+.si{background:var(--bg);border-radius:var(--radius-sm);padding:15px;text-align:center}
+.si .sl{font-size:11px;color:var(--text-light);margin-bottom:5px}
+.si .sv{font-size:22px;font-weight:900;color:var(--primary)}
+.si .sv.pos{color:var(--secondary)}
+.si .sv.neg{color:#E05C5C}
+.si .su{font-size:12px;font-weight:500;color:var(--text-light)}
+.chart-wrap{position:relative;height:300px}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.cf-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+.cf-tbl th{background:var(--bg);padding:8px 9px;text-align:right;font-weight:700;border-bottom:2px solid var(--border);white-space:nowrap}
+.cf-tbl th:first-child{text-align:left}
+.cf-tbl td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+.cf-tbl td:first-child{text-align:left;font-weight:700}
+.cf-tbl tr:hover{background:#FFF9F0}
+.cf-tbl .neg{color:#E05C5C}
+.cf-tbl .ms{background:linear-gradient(135deg,#FFFDF0,#FFF3CC)}
+.ms-tag{font-size:10px;color:#B08000;display:block;margin-top:2px}
+.tab-btns{display:flex;background:var(--bg);border-radius:var(--radius-sm);padding:4px;margin-bottom:18px}
+.tab-btn{flex:1;padding:9px;border:none;background:transparent;border-radius:7px;font-size:13px;font-weight:500;color:var(--text-light);cursor:pointer;transition:all .2s;font-family:'Noto Sans JP',sans-serif}
+.tab-btn.on{background:white;color:var(--primary);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.tab-pane{display:none}
+.tab-pane.on{display:block}
+.cta-box{background:linear-gradient(135deg,#FFF5F0,#FFE8D6);border:2px solid var(--primary-light);border-radius:var(--radius-lg);padding:30px 22px;text-align:center;margin-bottom:18px}
+.cta-ico{font-size:46px;margin-bottom:14px}
+.cta-box h3{font-size:19px;font-weight:900;margin-bottom:10px;line-height:1.4}
+.cta-box p{font-size:13px;color:var(--text-light);line-height:1.7;margin-bottom:22px}
+.btn-cta{display:inline-block;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:16px 38px;border-radius:50px;font-size:16px;font-weight:700;box-shadow:0 6px 20px rgba(255,140,105,.4);transition:all .3s;cursor:pointer;border:none;font-family:'Noto Sans JP',sans-serif}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,140,105,.5)}
+.btn-restart{margin-top:12px;display:inline-block;color:var(--text-light);font-size:13px;cursor:pointer;text-decoration:underline;font-family:'Noto Sans JP',sans-serif;background:none;border:none}
+.disclaimer{font-size:11px;color:var(--text-muted);line-height:1.8;padding:16px;background:white;border-radius:var(--radius);margin-bottom:18px;box-shadow:var(--shadow)}
+.disclaimer-title{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:8px}
+@media(max-width:400px){.ot-row,.ot-head{grid-template-columns:60px 1fr 80px 32px}}
+</style>
+</head>
+<body>
+
+<div id="landing">
+  <div class="land-icon">🏡</div>
+  <h1>あなたの未来のお金を<br><span>見える化</span>しよう</h1>
+  <p class="sub">ライフプランシミュレータで、20年後の資産を一緒に確認しましょう。<br>難しい計算はすべておまかせ！約5分で完了します。</p>
+  <div class="land-feats">
+    <div class="land-feat"><span>⏱️</span><span>約5分で完成</span></div>
+    <div class="land-feat"><span>📱</span><span>スマホ・PC対応</span></div>
+    <div class="land-feat"><span>🔒</span><span>入力情報は保存しない</span></div>
+    <div class="land-feat"><span>💰</span><span>無料・登録不要</span></div>
+  </div>
+  <button class="btn-start" onclick="startSim()">シミュレーションを始める →</button>
+  <p class="land-note">どなたでも無料でご利用いただけます</p>
+  <a href="life_plan_simulator.html" download="ライフプランシミュレータ.html" class="dl-link">⬇ このページをHTMLでダウンロードする</a>
+</div>
+
+<div id="simulator">
+  <div class="sim-header">
+    <div class="sim-header-inner">
+      <div class="sim-brand">🏡 ライフプランシミュレータ</div>
+      <div class="prog-wrap"><div class="prog-steps" id="progSteps"></div><div class="prog-txt" id="progTxt">STEP 1 / 6</div></div>
+    </div>
+  </div>
+  <div class="step-wrap">
+
+    <!-- STEP1 家族構成 -->
+    <div class="step-panel" id="s0">
+      <div class="step-hd"><div class="step-badge">👨‍👩‍👧 STEP 1</div><div class="step-title">家族構成を教えてください</div></div>
+      <div class="card">
+        <div class="card-title">👤 あなたの現在の年齢</div>
+        <div class="age-disp" id="ageTxt">35<span>歳</span></div>
+        <input type="range" class="slider" id="ageSlider" min="25" max="70" value="35" oninput="setAge(this.value)">
+        <div class="slider-lbls"><span>25歳</span><span>70歳</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">💼 あなたの働き方</div>
+        <div class="ws-grid" id="myWorkCg">
+          <button class="cb" data-v="employee"  onclick="chooseMyWork(this)">会社員・公務員</button>
+          <button class="cb" data-v="self"       onclick="chooseMyWork(this)">自営業・フリーランス</button>
+          <button class="cb" data-v="homemaker"  onclick="chooseMyWork(this)">専業主婦・主夫<small>（扶養内パート含む）</small></button>
+          <button class="cb" data-v="retired"    onclick="chooseMyWork(this)">年金生活</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">💑 配偶者はいますか？</div>
+        <div class="cg" id="spouseCg">
+          <button class="cb" data-v="none" onclick="chooseSpouse(this)">いない</button>
+          <button class="cb" data-v="yes"  onclick="chooseSpouse(this)">いる</button>
+        </div>
+        <div id="spouseDetail" style="display:none">
+          <div class="fg" style="margin-top:14px">
+            <div class="fl">配偶者の年齢</div>
+            <div class="iunit"><input type="number" class="fi" id="spouseAgeInput" min="20" max="80" placeholder="35" oninput="S.spouseAge=parseInt(this.value)||35"><span class="unit">歳</span></div>
+          </div>
+          <div class="fg" style="margin-bottom:0">
+            <div class="fl">配偶者の働き方</div>
+            <div class="ws-grid" id="spouseWorkCg">
+              <button class="cb" data-v="employee"  onclick="chooseSpouseWork(this)">会社員・公務員</button>
+              <button class="cb" data-v="self"       onclick="chooseSpouseWork(this)">自営業・フリーランス</button>
+              <button class="cb" data-v="homemaker"  onclick="chooseSpouseWork(this)">専業主婦・主夫<small>（扶養内パート含む）</small></button>
+              <button class="cb" data-v="retired"    onclick="chooseSpouseWork(this)">年金生活</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">👶 子どもの人数<small style="font-weight:400;color:var(--text-muted);margin-left:6px;font-size:11px">大学卒業前のお子さん</small></div>
+        <div class="cg" id="childCg">
+          <button class="cb on" data-v="0" onclick="chooseChildren(this)">0人</button>
+          <button class="cb"    data-v="1" onclick="chooseChildren(this)">1人</button>
+          <button class="cb"    data-v="2" onclick="chooseChildren(this)">2人</button>
+          <button class="cb"    data-v="3" onclick="chooseChildren(this)">3人以上</button>
+        </div>
+        <div id="childAges" style="margin-top:14px"></div>
+      </div>
+      <div class="nav-btns"><button class="btn-next" onclick="goNext()">次へ →</button></div>
+    </div>
+
+    <!-- STEP2 収入・年金 -->
+    <div class="step-panel" id="s1">
+      <div class="step-hd"><div class="step-badge">💰 STEP 2</div><div class="step-title">収入・年金を教えてください</div></div>
+      <div class="card" id="myIncomeCard"><div class="card-title">💼 あなたの収入</div><div id="myIncomeInner"><div class="info-box">STEP1で働き方を選択してください。</div></div></div>
+      <div class="card" id="spouseIncomeCard" style="display:none"><div class="card-title">💼 配偶者の収入</div><div id="spouseIncomeInner"></div></div>
+      <div class="card pen-card">
+        <div class="card-title">📋 公的年金の受給予定額（目安）</div>
+        <p class="fhint" style="margin-bottom:12px">65歳から受給開始。STEP1の働き方をもとに自動で計算しています。</p>
+        <div id="pensionDisplay"></div>
+        <p class="fhint" style="margin-top:10px">※ ねんきん定期便の金額と大きく異なる場合はFPにご相談ください。</p>
+      </div>
+      <div class="card">
+        <div class="card-title">💹 その他の収入（任意）</div>
+        <div class="fl">不動産収入・個人年金・配当など（月額）</div>
+        <div class="iunit"><input type="number" class="fi" id="otherIncome" placeholder="0" min="0"><span class="unit">万円 / 月</span></div>
+      </div>
+      <div class="nav-btns"><button class="btn-back" onclick="goPrev()">← 戻る</button><button class="btn-next" onclick="goNext()">次へ →</button></div>
+    </div>
+
+    <!-- STEP3 支出 -->
+    <div class="step-panel" id="s2">
+      <div class="step-hd"><div class="step-badge">🛒 STEP 3</div><div class="step-title">毎月の支出を教えてください</div><div class="step-desc">住居費・教育費は別途入力します。</div></div>
+      <div class="card">
+        <div class="card-title">🛍️ 毎月の生活費（住居費・教育費を除く）</div>
+        <div class="ec-grid">
+          <div class="ec" data-e="9"    onclick="chooseExpense(this)"><div class="ecr">〜10万円</div><div class="ecl">単身・節約志向</div></div>
+          <div class="ec" data-e="12.5" onclick="chooseExpense(this)"><div class="ecr">10〜15万円</div><div class="ecl">単身〜夫婦</div></div>
+          <div class="ec" data-e="17.5" onclick="chooseExpense(this)"><div class="ecr">15〜20万円</div><div class="ecl">夫婦〜子育て世帯</div></div>
+          <div class="ec" data-e="22.5" onclick="chooseExpense(this)"><div class="ecr">20〜25万円</div><div class="ecl">子育て世帯</div></div>
+          <div class="ec" data-e="27.5" onclick="chooseExpense(this)"><div class="ecr">25〜30万円</div><div class="ecl">ゆとりめ</div></div>
+          <div class="ec" data-e="32"   onclick="chooseExpense(this)"><div class="ecr">30万円〜</div><div class="ecl">支出多め</div></div>
+        </div>
+        <div class="or-div"><span>または直接入力</span></div>
+        <div class="fl">わが家の生活費を直接入力</div>
+        <div class="iunit"><input type="number" class="fi" id="livingDirect" placeholder="例：18" min="0" oninput="onLivingDirect(this.value)"><span class="unit">万円 / 月</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 一時的な大きな支出（任意）</div>
+        <p class="fhint" style="margin-bottom:12px">車の買い替え・リフォームなど、将来の大きな支出を登録できます。</p>
+        <div id="otHead" style="display:none" class="ot-head"><span>◯年後</span><span>内容</span><span>金額(万円)</span><span></span></div>
+        <div id="otList"></div>
+        <button class="btn-add" onclick="addOt()">＋ 一時的支出を追加する</button>
+      </div>
+      <div class="nav-btns"><button class="btn-back" onclick="goPrev()">← 戻る</button><button class="btn-next" onclick="goNext()">次へ →</button></div>
+    </div>
+
+    <!-- STEP4 住まい -->
+    <div class="step-panel" id="s3">
+      <div class="step-hd"><div class="step-badge">🏠 STEP 4</div><div class="step-title">住まいについて教えてください</div></div>
+      <div class="card">
+        <div class="card-title">🏡 住まいの種類</div>
+        <div class="cg" id="houseCg">
+          <button class="cb" data-v="rent"  onclick="chooseHouse(this,'rent')">賃貸</button>
+          <button class="cb" data-v="loan"  onclick="chooseHouse(this,'loan')">持ち家（ローンあり）</button>
+          <button class="cb" data-v="owned" onclick="chooseHouse(this,'owned')">持ち家（完済済）</button>
+        </div>
+      </div>
+      <div class="card" id="rentCard" style="display:none">
+        <div class="card-title">🏢 毎月の家賃</div>
+        <div class="iunit"><input type="number" class="fi" id="rentAmt" placeholder="8" min="0"><span class="unit">万円 / 月</span></div>
+      </div>
+      <div class="card" id="loanCard" style="display:none">
+        <div class="card-title">🏦 住宅ローン</div>
+        <div class="fg"><div class="fl">毎月の返済額</div><div class="iunit"><input type="number" class="fi" id="loanAmt" placeholder="10" min="0"><span class="unit">万円 / 月</span></div></div>
+        <div class="fg"><div class="fl">残りの返済期間</div><div class="iunit"><input type="number" class="fi" id="loanYrs" placeholder="25" min="1" max="35"><span class="unit">年</span></div></div>
+        <div class="fg"><div class="fl">維持費（固定資産税・修繕費 月換算）</div><div class="iunit"><input type="number" class="fi" id="loanMaint" placeholder="2" min="0"><span class="unit">万円 / 月</span></div></div>
+      </div>
+      <div class="card" id="ownedCard" style="display:none">
+        <div class="card-title">🏠 維持費（固定資産税・修繕費 月換算）</div>
+        <div class="iunit"><input type="number" class="fi" id="ownedMaint" placeholder="2" min="0"><span class="unit">万円 / 月</span></div>
+      </div>
+      <div class="nav-btns"><button class="btn-back" onclick="goPrev()">← 戻る</button><button class="btn-next" onclick="goNext()">次へ →</button></div>
+    </div>
+
+    <!-- STEP5 教育費 -->
+    <div class="step-panel" id="s4">
+      <div class="step-hd"><div class="step-badge">🎒 STEP 5</div><div class="step-title">教育の方針を教えてください</div><div class="step-desc">お子さんごとに進路予定を選んでください。</div></div>
+      <div id="eduContent"></div>
+      <div class="nav-btns"><button class="btn-back" onclick="goPrev()">← 戻る</button><button class="btn-next" onclick="goNext()">次へ →</button></div>
+    </div>
+
+    <!-- STEP6 貯蓄・投資 -->
+    <div class="step-panel" id="s5">
+      <div class="step-hd"><div class="step-badge">📈 STEP 6</div><div class="step-title">貯蓄・投資の状況を教えてください</div></div>
+      <div class="card">
+        <div class="card-title">💰 現在の残高</div>
+        <div class="fg"><div class="fl">預貯金（普通・定期預金など）</div><div class="iunit"><input type="number" class="fi" id="savBal" placeholder="200" min="0"><span class="unit">万円</span></div></div>
+        <div class="fg" style="margin-bottom:0"><div class="fl">運用資産（株式・投信・NISAなど）</div><div class="iunit"><input type="number" class="fi" id="invBal" placeholder="100" min="0"><span class="unit">万円</span></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📥 毎年の積立額</div>
+        <p class="fhint" style="margin-bottom:12px">退職年齢まで積み立てる前提で計算します。</p>
+        <div class="fg"><div class="fl">預金への積立（年額）</div><div class="iunit"><input type="number" class="fi" id="savSave" placeholder="24" min="0"><span class="unit">万円 / 年</span></div></div>
+        <div class="fg" style="margin-bottom:0"><div class="fl">運用への積立（NISA・iDeCoなど 年額）</div><div class="iunit"><input type="number" class="fi" id="invSave" placeholder="60" min="0"><span class="unit">万円 / 年</span></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 想定利回り（運用資産のみ）</div>
+        <div class="rate-grid">
+          <div class="rc" data-r="0.01" onclick="chooseRate(this)"><div class="rv">1%</div><div class="rl">保守的</div></div>
+          <div class="rc on" data-r="0.03" onclick="chooseRate(this)"><div class="rv">3%</div><div class="rl">バランス型</div></div>
+          <div class="rc" data-r="0.05" onclick="chooseRate(this)"><div class="rv">5%</div><div class="rl">株式投資</div></div>
+        </div>
+      </div>
+      <div class="nav-btns"><button class="btn-back" onclick="goPrev()">← 戻る</button><button class="btn-next" onclick="calcAndShow()">結果を見る 🎉</button></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="results">
+  <div class="res-hd"><h2>🎉 シミュレーション結果</h2><p>あなたの20年間の資産推移をシミュレーションしました</p></div>
+  <div class="res-body">
+    <div class="rc2"><div class="rc2-title">📊 20年後のポイント</div><div class="sum-grid" id="sumGrid"></div></div>
+    <div class="rc2">
+      <div class="rc2-title">📈 資産推移</div>
+      <div class="tab-btns"><button class="tab-btn on" onclick="switchTab('graph',this)">📊 グラフ</button><button class="tab-btn" onclick="switchTab('table',this)">📋 キャッシュフロー表</button></div>
+      <div class="tab-pane on" id="tabGraph"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
+      <div class="tab-pane"    id="tabTable"><div class="tbl-wrap"><table class="cf-tbl" id="cfTbl"></table></div></div>
+    </div>
+    <div class="cta-box">
+      <div class="cta-ico" id="ctaIco">🌱</div>
+      <h3 id="ctaTitle"></h3>
+      <p id="ctaMsg"></p>
+      <button class="btn-cta" id="ctaBtn">📩 無料相談を申し込む</button><br>
+      <button class="btn-restart" onclick="location.reload()">もう一度やり直す</button>
+    </div>
+    <div class="disclaimer">
+      <div class="disclaimer-title">【ご注意事項】</div>
+      本シミュレーションは、ご入力いただいた情報をもとにした試算であり、将来の資産額を保証するものではありません。税制・社会保障制度の変更、物価・金利の変動等により、実際の結果は大きく異なる場合があります。本ツールは情報提供を目的としており、金融商品の勧誘・投資助言を行うものではございません。具体的なプランニングは、ファイナンシャルプランナー等の専門家にご相談ください。掲載データは2026年7月現在の情報をもとにしています。
+    </div>
+  </div>
+</div>
+
+<script>
+const PENSION_GROSS={employee:15.5,self:5.9,homemaker:5.9,retired:15.5};
+const BONUS_VAL={none:0,lt500:250,b500k:750,b1000k:1500};
+const EDU={preschool:{pub:18.5,prv:34.7},elementary:{pub:33.6,prv:182.8},middle:{pub:54.2,prv:156.0},high:{pub:59.8,prv:103.0}};
+const UNI={none:{years:0,y1:0,y2:0},natl:{years:4,y1:84,y2:54},pvlib:{years:4,y1:121,y2:99},pvsci:{years:4,y1:160,y2:136},medical:{years:6,y1:478,y2:370}};
+
+const S={
+  age:35,workStyle:null,
+  spouse:null,spouseAge:35,spouseWorkStyle:null,
+  childCount:0,children:[],
+  myGrossAnnual:0,myRetireAge:65,myBonusKey:'none',
+  spouseGrossAnnual:0,spouseRetireAge:65,spouseBonusKey:'none',
+  otherIncome:0,
+  living:0,livingDirect:0,oneTime:[],
+  houseType:null,rentAmt:0,loanAmt:0,loanYrs:0,loanMaint:0,ownedMaint:0,
+  savBal:0,invBal:0,savSave:0,invSave:0,rate:0.03,
+  step:0,
+};
+
+window.addEventListener('DOMContentLoaded',()=>{setAge(35);initProg();});
+
+function startSim(){
+  document.getElementById('landing').style.display='none';
+  document.getElementById('simulator').classList.add('on');
+  setAge(document.getElementById('ageSlider').value);
+  renderStep2(); showStep(0);
+}
+
+function initProg(){
+  const w=document.getElementById('progSteps');w.innerHTML='';
+  for(let i=0;i<6;i++){const d=document.createElement('div');d.className='prog-step';d.id='ps'+i;w.appendChild(d);}
+}
+function updateProg(){
+  for(let i=0;i<6;i++){const el=document.getElementById('ps'+i);el.className='prog-step'+(i<S.step?' done':i===S.step?' cur':'');}
+  document.getElementById('progTxt').textContent=`STEP ${S.step+1} / 6`;
+}
+function showStep(n){
+  document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('s'+n).classList.add('on');
+  S.step=n; updateProg();
+  if(n===1) renderStep2();
+  if(n===4) renderEdu();
+  window.scrollTo(0,0);
+}
+function goNext(){if(validate(S.step))showStep(S.step+1);}
+function goPrev(){if(S.step>0)showStep(S.step-1);}
+
+function validate(n){
+  switch(n){
+    case 0:
+      if(!S.workStyle){alert('あなたの働き方を選択してください。');return false;}
+      if(!S.spouse){alert('配偶者の有無を選択してください。');return false;}
+      if(S.spouse==='yes'&&!S.spouseWorkStyle){alert('配偶者の働き方を選択してください。');return false;}
+      for(let i=0;i<Math.min(S.childCount,3);i++){
+        const el=document.getElementById('ca'+i);
+        if(el&&el.value===''){alert(`第${i+1}子の年齢を入力してください。`);return false;}
+      }
+      return true;
+    case 1:
+      if((S.workStyle==='employee'||S.workStyle==='self')&&!S.myGrossAnnual){alert('あなたの収入を入力してください。');return false;}
+      if(S.spouse==='yes'&&(S.spouseWorkStyle==='employee'||S.spouseWorkStyle==='self')&&!S.spouseGrossAnnual){alert('配偶者の収入を入力してください。');return false;}
+      return true;
+    case 2:
+      if(!S.living&&!S.livingDirect){alert('毎月の生活費を選択または入力してください。');return false;}
+      return true;
+    case 3:
+      if(!S.houseType){alert('住まいの種類を選択してください。');return false;}
+      if(S.houseType==='rent'&&!parseFloat(document.getElementById('rentAmt').value)){alert('家賃を入力してください。');return false;}
+      if(S.houseType==='loan'&&!parseFloat(document.getElementById('loanAmt').value)){alert('ローン返済額を入力してください。');return false;}
+      return true;
+    default:return true;
+  }
+}
+
+function setAge(v){
+  S.age=parseInt(v);
+  document.getElementById('ageTxt').innerHTML=v+'<span>歳</span>';
+  const pct=((v-25)/(70-25))*100;
+  document.getElementById('ageSlider').style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;
+}
+function selBtn(sel,btn){document.querySelectorAll(sel+' .cb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function chooseMyWork(btn){selBtn('#myWorkCg',btn);S.workStyle=btn.dataset.v;renderStep2();renderPension();}
+function chooseSpouse(btn){selBtn('#spouseCg',btn);S.spouse=btn.dataset.v;document.getElementById('spouseDetail').style.display=S.spouse==='yes'?'block':'none';renderPension();}
+function chooseSpouseWork(btn){selBtn('#spouseWorkCg',btn);S.spouseWorkStyle=btn.dataset.v;renderStep2();renderPension();}
+function chooseChildren(btn){
+  selBtn('#childCg',btn);S.childCount=parseInt(btn.dataset.v);S.children=[];
+  const n=Math.min(S.childCount,3),labels=['第1子','第2子','第3子'],c=document.getElementById('childAges');
+  if(!n){c.innerHTML='';return;}
+  c.innerHTML=Array.from({length:n},(_,i)=>`<div class="fg" style="margin-bottom:10px"><div class="fl">${labels[i]}の年齢</div><div class="iunit"><input type="number" class="fi" id="ca${i}" placeholder="${[5,3,1][i]}" min="0" max="22" oninput="(S.children[${i}]=S.children[${i}]||{age:0,k3:'pub',h:'pub',uni:'natl'}).age=parseInt(this.value)||0"><span class="unit">歳</span></div></div>`).join('');
+  for(let i=0;i<n;i++) S.children[i]={age:0,k3:'pub',h:'pub',uni:'natl'};
+}
+
+function pensionNet(ws){return ws?(PENSION_GROSS[ws]||5.9)*0.9:0;}
+function renderPension(){
+  const el=document.getElementById('pensionDisplay');if(!el)return;
+  const myPen=pensionNet(S.workStyle);
+  let h=`<div class="pen-row"><span class="pl">あなた（65歳から）</span><span class="pa">${S.workStyle?`約${myPen.toFixed(1)}万円/月`:'（働き方を選択してください）'}</span></div>`;
+  if(S.spouse==='yes'&&S.spouseWorkStyle){
+    const sp=pensionNet(S.spouseWorkStyle);
+    h+=`<div class="pen-row"><span class="pl">配偶者（65歳から）</span><span class="pa">約${sp.toFixed(1)}万円/月</span></div>`;
+    if(S.workStyle) h+=`<div class="pen-total"><span class="pl">世帯合計</span><span class="pa">約${(myPen+sp).toFixed(1)}万円/月</span></div>`;
+  }
+  el.innerHTML=h;
+}
+
+function renderStep2(){
+  const myInner=document.getElementById('myIncomeInner');
+  const spCard=document.getElementById('spouseIncomeCard');
+  const spInner=document.getElementById('spouseIncomeInner');
+  if(!myInner)return;
+  myInner.innerHTML=buildIncomeHTML(S.workStyle,S.myGrossAnnual,S.myRetireAge,S.myBonusKey,'my');
+  if(S.spouse==='yes'&&S.spouseWorkStyle){
+    spCard.style.display='block';
+    spInner.innerHTML=buildIncomeHTML(S.spouseWorkStyle,S.spouseGrossAnnual,S.spouseRetireAge,S.spouseBonusKey,'sp');
+  } else {spCard.style.display='none';}
+  renderPension();
+}
+
+function buildIncomeHTML(ws,gross,retireAge,bonusKey,pfx){
+  if(!ws) return '<div class="info-box">STEP1で働き方を選択してください。</div>';
+  if(ws==='homemaker') return '<div class="info-box">専業主婦・主夫の場合、勤労収入は0円として計算します。</div>';
+  if(ws==='retired')   return '<div class="info-box">年金生活の場合、公的年金のみで計算します。</div>';
+  const label=ws==='employee'?'額面年収（ボーナス含む）':'売上－経費（年額）';
+  const hint=ws==='employee'?'手取り（額面×80%）で自動計算します。':'実質的な年間収入を入力してください。';
+  const onInp=pfx==='my'?`S.myGrossAnnual=parseFloat(this.value)||0`:`S.spouseGrossAnnual=parseFloat(this.value)||0`;
+  const onRetire=pfx==='my'?`chooseMyRetire(this)`:`chooseSpouseRetire(this)`;
+  const onBonus=pfx==='my'?`chooseMyBonus(this)`:`chooseSpouseBonus(this)`;
+  const r60=retireAge===60?'on':'',r65=retireAge===65?'on':'',r70=retireAge===70?'on':'';
+  const bn=bonusKey==='none'?'on':'',bl=bonusKey==='lt500'?'on':'',b5=bonusKey==='b500k'?'on':'',b1=bonusKey==='b1000k'?'on':'';
+  return `<div class="fg"><div class="fl">${label}</div>
+    <div class="iunit"><input type="number" class="fi" id="${pfx}Gross" placeholder="${ws==='employee'?600:400}" min="0" value="${gross||''}" oninput="${onInp}"><span class="unit">万円 / 年</span></div>
+    <div class="fhint">${hint}</div></div>
+    <div class="fg"><div class="fl">退職予定年齢</div>
+    <div class="cg" id="${pfx}RetireCg">
+      <button class="cb ${r60}" data-v="60" onclick="${onRetire}">60歳</button>
+      <button class="cb ${r65}" data-v="65" onclick="${onRetire}">65歳</button>
+      <button class="cb ${r70}" data-v="70" onclick="${onRetire}">70歳</button>
+    </div></div>
+    ${ws==='employee'?`<div class="fg" style="margin-bottom:0"><div class="fl">退職金の目安</div>
+    <div class="cg" style="flex-wrap:wrap" id="${pfx}BonusCg">
+      <button class="cb ${bn}" data-v="none"   style="min-width:calc(50% - 4px)" onclick="${onBonus}">なし</button>
+      <button class="cb ${bl}" data-v="lt500"  style="min-width:calc(50% - 4px)" onclick="${onBonus}">〜500万円</button>
+      <button class="cb ${b5}" data-v="b500k"  style="min-width:calc(50% - 4px)" onclick="${onBonus}">500〜1,000万円</button>
+      <button class="cb ${b1}" data-v="b1000k" style="min-width:calc(50% - 4px)" onclick="${onBonus}">1,000〜2,000万円</button>
+    </div></div>`:''}`;
+}
+
+function chooseMyRetire(btn){selBtn('#myRetireCg',btn);S.myRetireAge=parseInt(btn.dataset.v);}
+function chooseMyBonus(btn){selBtn('#myBonusCg',btn);S.myBonusKey=btn.dataset.v;}
+function chooseSpouseRetire(btn){selBtn('#spRetireCg',btn);S.spouseRetireAge=parseInt(btn.dataset.v);}
+function chooseSpouseBonus(btn){selBtn('#spBonusCg',btn);S.spouseBonusKey=btn.dataset.v;}
+
+function chooseExpense(el){document.querySelectorAll('.ec').forEach(e=>e.classList.remove('on'));el.classList.add('on');S.living=parseFloat(el.dataset.e);S.livingDirect=0;document.getElementById('livingDirect').value='';}
+function onLivingDirect(v){S.livingDirect=parseFloat(v)||0;if(S.livingDirect>0){document.querySelectorAll('.ec').forEach(e=>e.classList.remove('on'));S.living=0;}}
+function addOt(){S.oneTime.push({id:Date.now(),yrs:'',name:'',amt:''});renderOt();}
+function removeOt(id){S.oneTime=S.oneTime.filter(e=>e.id!==id);renderOt();}
+function renderOt(){
+  document.getElementById('otHead').style.display=S.oneTime.length?'grid':'none';
+  document.getElementById('otList').innerHTML=S.oneTime.map(e=>`<div class="ot-row"><input type="number" class="fi" placeholder="3" min="1" max="30" value="${e.yrs}" oninput="updOt(${e.id},'yrs',this.value)"><input type="text" class="fi" placeholder="例：車の買替え" value="${e.name}" oninput="updOt(${e.id},'name',this.value)"><input type="number" class="fi" placeholder="200" min="0" value="${e.amt}" oninput="updOt(${e.id},'amt',this.value)"><button class="btn-rm" onclick="removeOt(${e.id})">✕</button></div>`).join('');
+}
+function updOt(id,f,v){const e=S.oneTime.find(x=>x.id===id);if(e)e[f]=f==='name'?v:(parseFloat(v)||0);}
+
+function chooseHouse(btn,type){selBtn('#houseCg',btn);S.houseType=type;['rent','loan','owned'].forEach(t=>document.getElementById(t+'Card').style.display=t===type?'block':'none');}
+
+function renderEdu(){
+  const c=document.getElementById('eduContent'),n=Math.min(S.childCount,3);
+  if(!n){c.innerHTML=`<div class="card"><div style="text-align:center;padding:20px;color:var(--text-light)"><div style="font-size:40px;margin-bottom:12px">👍</div><div>お子さんがいないため、教育費は計算に含まれません。</div></div></div>`;return;}
+  const labels=['第1子','第2子','第3子'];
+  const uniOpts=[{v:'none',l:'大学進学なし'},{v:'natl',l:'国公立大学'},{v:'pvlib',l:'私立文系'},{v:'pvsci',l:'私立理系'},{v:'medical',l:'私立医大（6年制）'}];
+  c.innerHTML=Array.from({length:n},(_,i)=>{
+    const ch=S.children[i]||{age:0,k3:'pub',h:'pub',uni:'natl'};
+    return `<div class="card"><div class="card-title">🎒 ${labels[i]}（${ch.age}歳）の進路</div>
+      <div class="edu-blk"><div class="edu-blk-title">幼稚園〜中学校</div><div class="cg" id="k3Cg${i}"><button class="cb ${ch.k3==='pub'?'on':''}" onclick="updChild(${i},'k3','pub',this)">公立</button><button class="cb ${ch.k3==='prv'?'on':''}" onclick="updChild(${i},'k3','prv',this)">私立</button></div></div>
+      <div class="edu-blk"><div class="edu-blk-title">高校</div><div class="cg" id="hCg${i}"><button class="cb ${ch.h==='pub'?'on':''}" onclick="updChild(${i},'h','pub',this)">公立</button><button class="cb ${ch.h==='prv'?'on':''}" onclick="updChild(${i},'h','prv',this)">私立</button></div></div>
+      <div class="edu-blk" style="margin-bottom:0"><div class="edu-blk-title">大学・進学先</div><div class="uni-grid">${uniOpts.map(o=>`<button class="cb ${ch.uni===o.v?'on':''}" onclick="updChild(${i},'uni','${o.v}',this)">${o.l}</button>`).join('')}</div></div>
+    </div>`;
+  }).join('');
+}
+function updChild(i,f,v,btn){S.children[i]=S.children[i]||{age:0,k3:'pub',h:'pub',uni:'natl'};S.children[i][f]=v;btn.closest('.cg,.uni-grid').querySelectorAll('.cb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+
+function chooseRate(el){document.querySelectorAll('.rc').forEach(r=>r.classList.remove('on'));el.classList.add('on');S.rate=parseFloat(el.dataset.r);}
+
+function readInputs(){
+  // Only overwrite state if the DOM element exists and has a non-empty value
+  const rd=(id,key)=>{const el=document.getElementById(id);if(el&&el.value.trim()!==''){const v=parseFloat(el.value);if(!isNaN(v))S[key]=v;}};
+  rd('myGross','myGrossAnnual');rd('spouseGross','spouseGrossAnnual');
+  rd('otherIncome','otherIncome');rd('livingDirect','livingDirect');
+  rd('rentAmt','rentAmt');rd('loanAmt','loanAmt');rd('loanYrs','loanYrs');rd('loanMaint','loanMaint');rd('ownedMaint','ownedMaint');
+  rd('savBal','savBal');rd('invBal','invBal');rd('savSave','savSave');rd('invSave','invSave');
+}
+
+function personIncome(baseAge,ws,gross,retireAge,y){
+  if(!ws)return 0;
+  const a=baseAge+y;
+  if(ws==='homemaker')return 0;
+  if(ws==='retired')return pensionNet(ws)*12;
+  if(a<retireAge)return ws==='employee'?gross*0.8:gross;
+  return a>=65?pensionNet(ws)*12:0;
+}
+function bonusInYear(baseAge,ws,retireAge,bonusKey,y){
+  if(ws!=='employee')return 0;
+  return (baseAge+y===retireAge)?BONUS_VAL[bonusKey]||0:0;
+}
+function housingCost(y){
+  if(S.houseType==='rent')return S.rentAmt*12;
+  if(S.houseType==='loan')return (y<S.loanYrs?S.loanAmt:0)*12+S.loanMaint*12;
+  if(S.houseType==='owned')return S.ownedMaint*12;
+  return 0;
+}
+function childEduCost(ch,y){
+  const a=ch.age+y,k=ch.k3==='prv'?'prv':'pub',h=ch.h==='prv'?'prv':'pub';
+  if(a>=3&&a<=5)return EDU.preschool[k];
+  if(a>=6&&a<=11)return EDU.elementary[k];
+  if(a>=12&&a<=14)return EDU.middle[k];
+  if(a>=15&&a<=17)return EDU.high[h];
+  if(ch.uni!=='none'){const u=UNI[ch.uni];if(a===18)return u.y1;if(a>18&&a<18+u.years)return u.y2;}
+  return 0;
+}
+function effLiving(){return S.livingDirect>0?S.livingDirect:S.living;}
+function isWorking(y){if(S.workStyle==='homemaker'||S.workStyle==='retired')return false;return(S.age+y)<S.myRetireAge;}
+
+function simulate(){
+  let inv=S.invBal,sav=S.savBal;
+  return Array.from({length:21},(_,y)=>{
+    const inc=personIncome(S.age,S.workStyle,S.myGrossAnnual,S.myRetireAge,y)
+             +bonusInYear(S.age,S.workStyle,S.myRetireAge,S.myBonusKey,y)
+             +(S.spouse==='yes'?personIncome(S.spouseAge,S.spouseWorkStyle,S.spouseGrossAnnual,S.spouseRetireAge,y)+bonusInYear(S.spouseAge,S.spouseWorkStyle,S.spouseRetireAge,S.spouseBonusKey,y):0)
+             +S.otherIncome*12;
+    const hous=housingCost(y),liv=effLiving()*12;
+    const edu=S.children.slice(0,Math.min(S.childCount,3)).reduce((s,ch)=>s+childEduCost(ch,y),0);
+    const ot=S.oneTime.filter(e=>parseInt(e.yrs)===y).reduce((s,e)=>s+(parseFloat(e.amt)||0),0);
+    const totalExp=hous+liv+edu+ot;
+    const working=isWorking(y),iS=working?S.invSave:0,sS=working?S.savSave:0;
+    const cf=inc-totalExp-iS-sS;
+    inv=inv*(1+S.rate)+iS;
+    sav+=sS;
+    if(cf>0)sav+=cf;else{const d=-cf;if(sav>=d)sav-=d;else{inv-=(d-sav);sav=0;}}
+    const ms=[],ageNow=S.age+y;
+    if(ageNow===S.myRetireAge&&(S.workStyle==='employee'||S.workStyle==='self'))ms.push('退職・年金開始');
+    if(S.spouse==='yes'&&S.spouseAge+y===S.spouseRetireAge&&(S.spouseWorkStyle==='employee'||S.spouseWorkStyle==='self'))ms.push('配偶者 退職');
+    if(S.houseType==='loan'&&y===Math.ceil(S.loanYrs))ms.push('ローン完済');
+    S.oneTime.forEach(e=>{if(parseInt(e.yrs)===y&&e.name)ms.push(e.name);});
+    return{y,yr:new Date().getFullYear()+y,age:ageNow,inc:Math.round(inc),exp:Math.round(totalExp+iS+sS),cf:Math.round(cf),inv:Math.round(inv),sav:Math.round(sav),total:Math.round(inv+sav),ms};
+  });
+}
+
+let chartInst=null;
+function calcAndShow(){
+  readInputs();
+  const data=simulate();
+  document.getElementById('simulator').classList.remove('on');
+  document.getElementById('results').classList.add('on');
+  window.scrollTo(0,0);
+  renderSum(data);renderChart(data);renderTable(data);renderCTA(data);
+}
+
+function renderSum(data){
+  const f=data[0],l=data[data.length-1],peak=data.reduce((a,b)=>b.total>a.total?b:a,f);
+  const negRow=data.find(d=>d.total<0);
+  document.getElementById('sumGrid').innerHTML=`
+    <div class="si"><div class="sl">現在の総資産</div><div class="sv">${f.total.toLocaleString()}<span class="su"> 万円</span></div></div>
+    <div class="si"><div class="sl">20年後の総資産</div><div class="sv ${l.total<0?'neg':l.total>=f.total?'pos':''}">${l.total.toLocaleString()}<span class="su"> 万円</span></div></div>
+    <div class="si"><div class="sl">資産ピーク</div><div class="sv pos">${peak.total.toLocaleString()}<span class="su"> 万円</span></div></div>
+    <div class="si"><div class="sl">${negRow?'資産が底をつく年齢':'ピーク時の年齢'}</div><div class="sv ${negRow?'neg':''}">${negRow?negRow.age:peak.age}<span class="su"> 歳</span></div></div>`;
+}
+
+function renderChart(data){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const ctx=document.getElementById('myChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    data:{labels:data.map(d=>`${d.age}歳`),datasets:[
+      {type:'bar',label:'預貯金',data:data.map(d=>d.sav),backgroundColor:'rgba(123,200,164,0.8)',stack:'a'},
+      {type:'bar',label:'運用資産',data:data.map(d=>d.inv),backgroundColor:'rgba(255,140,105,0.8)',stack:'a'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'top',labels:{font:{family:'Noto Sans JP',size:12},padding:14}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toLocaleString()}万円`}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'Noto Sans JP',size:10},maxRotation:45}},
+        y:{stacked:true,ticks:{font:{family:'Noto Sans JP',size:11},callback:v=>v.toLocaleString()+'万'},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+}
+
+function renderTable(data){
+  let h=`<thead><tr><th>年</th><th>年齢</th><th>収入</th><th>支出</th><th>年間収支</th><th>預貯金</th><th>運用資産</th><th>総資産</th></tr></thead><tbody>`;
+  data.forEach(d=>{
+    const neg=d.cf<0,ms=d.ms.length?`<span class="ms-tag">★ ${d.ms.join('・')}</span>`:'';
+    h+=`<tr class="${d.ms.length?'ms':''}"><td>${d.yr}${ms}</td><td>${d.age}歳</td><td>${d.inc.toLocaleString()}万</td><td>${d.exp.toLocaleString()}万</td><td class="${neg?'neg':''}">${neg?'▲':'+'}${Math.abs(d.cf).toLocaleString()}万</td><td class="${d.sav<0?'neg':''}">${d.sav.toLocaleString()}万</td><td class="${d.inv<0?'neg':''}">${d.inv.toLocaleString()}万</td><td class="${d.total<0?'neg':''}"><strong>${d.total.toLocaleString()}万</strong></td></tr>`;
+  });
+  document.getElementById('cfTbl').innerHTML=h+'</tbody>';
+}
+
+function renderCTA(data){
+  const hasNeg=data.some(d=>d.total<0),hasCFDef=!hasNeg&&data.some(d=>d.cf<0),hasOT=S.oneTime.length>0;
+  let ico,title,msg;
+  if(hasNeg){ico='💡';title='今から動けば、まだ打てる手があります。';msg='シミュレーションでは資産が底をつく時期が見えています。ただ、早めに気づいたぶんだけ、対策の選択肢は広がります。一緒に見直してみませんか？';}
+  else if(hasCFDef){ico='🤝';title='一時的な赤字の年、慌てなくて大丈夫です。';msg='支出が収入を上回る年もありますが、資産全体は保たれています。事前に見通しをたてておくことで、いざというときも落ち着いて対処できます。';}
+  else if(hasOT){ico='📅';title='大きな出費の前後、一度整理してみませんか？';msg='ライフイベントの前後で家計は大きく動きます。タイミングと備えを意識するだけで、選択肢がぐっと広がります。';}
+  else{ico='🌱';title='今の家計は安定しています。次のステップを考えてみましょう。';msg='現在の計画は順調です。だからこそ、やりたいことや叶えたいライフイベントを具体的に描いてみませんか？専門家と話すと、さらに前向きな未来が見えてきます。';}
+  document.getElementById('ctaIco').textContent=ico;
+  document.getElementById('ctaTitle').textContent=title;
+  document.getElementById('ctaMsg').textContent=msg;
+  document.getElementById('ctaBtn').onclick=()=>alert('相談窓口は準備中です。\nしばらくお待ちください。');
+}
+
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById(tab==='graph'?'tabGraph':'tabTable').classList.add('on');
+}
+</script>
+</body>
+</html>
