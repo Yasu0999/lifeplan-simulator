@@ -515,7 +515,7 @@ function showStep(n){
   if(n===4) renderEdu();
   window.scrollTo(0,0);
 }
-function goNext(){if(validate(S.step))showStep(S.step+1);}
+function goNext(){if(!validate(S.step))return;if(S.step===5)calcAndShow();else showStep(S.step+1);}
 function goPrev(){if(S.step>0)showStep(S.step-1);}
 
 function validate(n){
