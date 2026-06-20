@@ -389,14 +389,15 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 <div id="results">
   <div class="res-hd"><h2>🎉 シミュレーション結果</h2><p id="resHdTxt">あなたの20年間の資産推移をシミュレーションしました</p></div>
   <div class="res-body">
-    <div class="rc2"><div class="rc2-title" id="sumTitle">📊 20年後のポイント</div><div class="sum-grid" id="sumGrid"></div></div>
+    <div class="rc2"><div class="rc2-title" id="sumTitle">📊 40年後のポイント</div><div class="sum-grid" id="sumGrid"></div></div>
     <div class="rc2">
       <div class="rc2-title">📈 資産推移</div>
       <div class="period-row">
         <span>表示期間：</span>
-        <button class="cb on" data-p="20" onclick="chooseSimPeriod(this)">20年</button>
-        <button class="cb"    data-p="30" onclick="chooseSimPeriod(this)">30年</button>
-        <button class="cb"    data-p="40" onclick="chooseSimPeriod(this)">40年</button>
+        <button class="cb" data-p="20" onclick="chooseSimPeriod(this)">20年</button>
+        <button class="cb" data-p="30" onclick="chooseSimPeriod(this)">30年</button>
+        <button class="cb on" data-p="40" onclick="chooseSimPeriod(this)">40年</button>
+        <button class="cb" data-p="9999" onclick="chooseSimPeriod(this)">100歳まで</button>
       </div>
       <div class="tab-btns"><button class="tab-btn on" onclick="switchTab('graph',this)">📊 グラフ</button><button class="tab-btn" onclick="switchTab('table',this)">📋 キャッシュフロー表</button></div>
       <div class="tab-pane on" id="tabGraph"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
@@ -434,7 +435,7 @@ const S={
   houseType:null,rentAmt:0,loanAmt:0,loanYrs:0,loanMaint:0,ownedMaint:0,
   savBal:0,invBal:0,savSave:0,invSave:0,rate:0.03,
   pensionMode:'auto',myPensionManual:0,spPensionManual:0,
-  simPeriod:20,
+  simPeriod:40,
   step:0,
 };
 
@@ -458,7 +459,7 @@ function restartSim(){
     otherIncome:0,living:0,livingDirect:0,oneTime:[],
     houseType:null,rentAmt:0,loanAmt:0,loanYrs:0,loanMaint:0,ownedMaint:0,
     savBal:0,invBal:0,savSave:0,invSave:0,rate:0.03,
-    pensionMode:'auto',myPensionManual:0,spPensionManual:0,simPeriod:20,step:0
+    pensionMode:'auto',myPensionManual:0,spPensionManual:0,simPeriod:40,step:0
   });
   // STEP1 リセット
   document.querySelectorAll('#myWorkCg .cb,#spouseCg .cb,#spouseWorkCg .cb').forEach(b=>b.classList.remove('on'));
@@ -491,12 +492,15 @@ function restartSim(){
   document.querySelector('.rc[data-r="0.03"]').classList.add('on');
   // 結果期間リセット
   document.querySelectorAll('.period-row .cb').forEach(b=>b.classList.remove('on'));
-  document.querySelector('.period-row .cb[data-p="20"]').classList.add('on');
+  document.querySelector('.period-row .cb[data-p="40"]').classList.add('on');
+  // 住宅入力欄リセット
+  ['rentAmt','loanAmt','loanYrs','loanMaint','ownedMaint'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   // 画面切替
   document.getElementById('results').classList.remove('on');
   document.getElementById('simulator').classList.remove('on');
   document.getElementById('landing').style.display='';
   window.scrollTo(0,0);
+  document.getElementById('ageSlider').value=35;
   setAge(35);
   initProg();
 }
@@ -810,10 +814,21 @@ function isWorking(y){
   return(S.age+y)<S.myRetireAge;
 }
 
+function getSimYears(){
+  const max=Math.max(0,100-S.age);
+  return S.simPeriod>=9999?max:Math.min(S.simPeriod,max);
+}
+function simPeriodDesc(){
+  if(S.simPeriod>=9999){const y=getSimYears();return'100歳まで（'+y+'年間）';}
+  const y=getSimYears(),sel=S.simPeriod;
+  return y<sel?y+'年間（100歳まで）':sel+'年間';
+}
+
 function simulate(){
   let inv=S.invBal,sav=S.savBal;
   const myPen=getMyPensionNet(),spPen=getSpPensionNet();
-  return Array.from({length:S.simPeriod+1},(_,y)=>{
+  const periods=getSimYears();
+  return Array.from({length:periods+1},(_,y)=>{
     const inc=personIncome(S.age,S.workStyle,S.myGrossAnnual,S.myRetireAge,y,myPen)
              +bonusInYear(S.age,S.workStyle,S.myRetireAge,S.myBonusKey,y)
              +(S.spouse==='yes'?personIncome(S.spouseAge,S.spouseWorkStyle,S.spouseGrossAnnual,S.spouseRetireAge,y,spPen)+bonusInYear(S.spouseAge,S.spouseWorkStyle,S.spouseRetireAge,S.spouseBonusKey,y):0)
@@ -848,7 +863,7 @@ function calcAndShow(){
   const data=simulate();
   document.getElementById('simulator').classList.remove('on');
   document.getElementById('results').classList.add('on');
-  document.getElementById('resHdTxt').textContent=`あなたの${S.simPeriod}年間の資産推移をシミュレーションしました`;
+  document.getElementById('resHdTxt').textContent=`あなたの${simPeriodDesc()}の資産推移をシミュレーションしました`;
   window.scrollTo(0,0);
   renderSum(data);renderChart(data);renderTable(data);renderCTA(data);
 }
@@ -857,7 +872,7 @@ function chooseSimPeriod(btn){
   document.querySelectorAll('.period-row .cb').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   S.simPeriod=parseInt(btn.dataset.p);
-  document.getElementById('resHdTxt').textContent=`あなたの${S.simPeriod}年間の資産推移をシミュレーションしました`;
+  document.getElementById('resHdTxt').textContent=`あなたの${simPeriodDesc()}の資産推移をシミュレーションしました`;
   const data=simulate();
   renderSum(data);renderChart(data);renderTable(data);
 }
@@ -865,10 +880,11 @@ function chooseSimPeriod(btn){
 function renderSum(data){
   const f=data[0],l=data[data.length-1],peak=data.reduce((a,b)=>b.total>a.total?b:a,f);
   const negRow=data.find(d=>d.total<0);
-  document.getElementById('sumTitle').textContent=`📊 ${S.simPeriod}年後のポイント`;
+  const sy=getSimYears();
+  document.getElementById('sumTitle').textContent=`📊 ${sy}年後のポイント`;
   document.getElementById('sumGrid').innerHTML=`
     <div class="si"><div class="sl">現在の総資産</div><div class="sv">${f.total.toLocaleString()}<span class="su"> 万円</span></div></div>
-    <div class="si"><div class="sl">${S.simPeriod}年後の総資産</div><div class="sv ${l.total<0?'neg':l.total>=f.total?'pos':''}">${l.total.toLocaleString()}<span class="su"> 万円</span></div></div>
+    <div class="si"><div class="sl">${sy}年後の総資産</div><div class="sv ${l.total<0?'neg':l.total>=f.total?'pos':''}">${l.total.toLocaleString()}<span class="su"> 万円</span></div></div>
     <div class="si"><div class="sl">資産ピーク</div><div class="sv pos">${peak.total.toLocaleString()}<span class="su"> 万円</span></div></div>
     <div class="si"><div class="sl">${negRow?'資産が底をつく年齢':'ピーク時の年齢'}</div><div class="sv ${negRow?'neg':''}">${negRow?negRow.age:peak.age}<span class="su"> 歳</span></div></div>`;
 }
