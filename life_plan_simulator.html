@@ -526,10 +526,6 @@ function validate(n){
       if(S.spouse==='yes'){
         if(!S.spouseWorkStyle){alert('配偶者の働き方を選択してください。');return false;}
       }
-      for(let i=0;i<Math.min(S.childCount,3);i++){
-        const el=document.getElementById('ca'+i);
-        if(el&&el.value===''){alert(`第${i+1}子の年齢を入力してください。`);return false;}
-      }
       return true;
     case 1:
       if((S.workStyle==='employee'||S.workStyle==='self'||S.workStyle==='homemaker_income')&&!S.myGrossAnnual){alert('あなたの収入を入力してください。');return false;}
@@ -607,10 +603,21 @@ function chooseSpRetiredStyle(btn){selBtn('#spRetiredStyleCg',btn);S.spRetiredSt
 
 function chooseChildren(btn){
   selBtn('#childCg',btn);S.childCount=parseInt(btn.dataset.v);S.children=[];
-  const n=Math.min(S.childCount,3),labels=['第1子','第2子','第3子'],c=document.getElementById('childAges');
+  const n=Math.min(S.childCount,3),labels=['第1子','第2子','第3子'],defs=[5,3,1],c=document.getElementById('childAges');
   if(!n){c.innerHTML='';return;}
-  c.innerHTML=Array.from({length:n},(_,i)=>`<div class="fg" style="margin-bottom:10px"><div class="fl">${labels[i]}の年齢</div><div class="iunit"><input type="number" class="fi" id="ca${i}" placeholder="例：${[5,3,1][i]}" min="0" max="22" oninput="(S.children[${i}]=S.children[${i}]||{age:0,k3:'pub',h:'pub',uni:'natl'}).age=parseInt(this.value)||0"><span class="unit">歳</span></div></div>`).join('');
-  for(let i=0;i<n;i++) S.children[i]={age:0,k3:'pub',h:'pub',uni:'natl'};
+  c.innerHTML=Array.from({length:n},(_,i)=>`<div class="fg" style="margin-bottom:18px"><div class="fl">${labels[i]}の年齢</div><div class="age-disp" id="caTxt${i}">${defs[i]}<span>歳</span></div><input type="range" class="slider" id="ca${i}" min="0" max="60" value="${defs[i]}" oninput="setChildAge(${i},this.value)"><div class="slider-lbls"><span>0歳</span><span>60歳</span></div></div>`).join('');
+  for(let i=0;i<n;i++){
+    S.children[i]={age:defs[i],k3:'pub',h:'pub',uni:'natl'};
+    const pct=(defs[i]/60)*100,sl=document.getElementById('ca'+i);
+    if(sl)sl.style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;
+  }
+}
+function setChildAge(i,v){
+  S.children[i]=S.children[i]||{age:0,k3:'pub',h:'pub',uni:'natl'};
+  S.children[i].age=parseInt(v);
+  const el=document.getElementById('caTxt'+i);if(el)el.innerHTML=v+'<span>歳</span>';
+  const sl=document.getElementById('ca'+i);
+  if(sl){const pct=(v/60)*100;sl.style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;}
 }
 
 // 年金計算
