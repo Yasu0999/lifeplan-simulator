@@ -223,8 +223,10 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
         </div>
         <div id="spouseDetail" style="display:none">
           <div class="fg" style="margin-top:14px">
-            <div class="fl">配偶者の年齢 <span style="color:#E05C5C;font-size:11px">※必須</span></div>
-            <div class="iunit"><input type="number" class="fi" id="spouseAgeInput" min="20" max="80" placeholder="例：35" oninput="updateSpouseAge(this.value)"><span class="unit">歳</span></div>
+            <div class="fl">配偶者の年齢</div>
+            <div class="age-disp" id="spouseAgeTxt">35<span>歳</span></div>
+            <input type="range" class="slider" id="spouseAgeSlider" min="18" max="85" value="35" oninput="updateSpouseAge(this.value)">
+            <div class="slider-lbls"><span>18歳</span><span>85歳</span></div>
           </div>
           <div class="fg" style="margin-bottom:0">
             <div class="fl">配偶者の働き方</div>
@@ -457,7 +459,7 @@ function restartSim(){
   document.getElementById('spouseDetail').style.display='none';
   document.getElementById('myRetiredSubCg').style.display='none';
   document.getElementById('spRetiredSubCg').style.display='none';
-  document.getElementById('spouseAgeInput').value='';
+  const spSlider=document.getElementById('spouseAgeSlider');if(spSlider){spSlider.value=35;updateSpouseAge(35);}
   document.querySelectorAll('#childCg .cb').forEach(b=>b.classList.remove('on'));
   document.querySelector('#childCg .cb[data-v="0"]').classList.add('on');
   document.getElementById('childAges').innerHTML='';
@@ -518,8 +520,6 @@ function validate(n){
       if(!S.workStyle){alert('あなたの働き方を選択してください。');return false;}
       if(!S.spouse){alert('配偶者の有無を選択してください。');return false;}
       if(S.spouse==='yes'){
-        const spAgeEl=document.getElementById('spouseAgeInput');
-        if(!spAgeEl||!spAgeEl.value){alert('配偶者の年齢を入力してください。');return false;}
         if(!S.spouseWorkStyle){alert('配偶者の働き方を選択してください。');return false;}
       }
       for(let i=0;i<Math.min(S.childCount,3);i++){
@@ -561,7 +561,11 @@ function setAge(v){
 }
 
 function updateSpouseAge(v){
-  S.spouseAge=parseInt(v)||0;
+  S.spouseAge=parseInt(v)||35;
+  const el=document.getElementById('spouseAgeTxt');
+  if(el)el.innerHTML=v+'<span>歳</span>';
+  const slider=document.getElementById('spouseAgeSlider');
+  if(slider){const pct=((v-18)/(85-18))*100;slider.style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;}
   const btn=document.getElementById('spRetiredBtn');
   if(btn){
     btn.disabled=S.spouseAge<65;
