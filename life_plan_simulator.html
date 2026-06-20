@@ -71,6 +71,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cb:disabled{opacity:0.35;cursor:not-allowed;pointer-events:none}
 .cb small{font-size:10px;font-weight:400;color:var(--text-light);display:block}
 .cb.on small{color:var(--primary-dark)}
+.work-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.work-grid .cb{flex:unset;min-width:unset;padding:16px 8px;font-size:13px;line-height:1.5;word-break:keep-all}
+.work-grid .cb small{font-size:11px;margin-top:3px}
+.work-grid .cb:last-child{grid-column:1/-1;font-size:14px}
 .sub-choice{background:#F8F0FF;border:1px solid #E0C8FF;border-radius:var(--radius-sm);padding:12px;margin-top:10px}
 .sub-choice .fl{font-size:12px;color:#7050A0;margin-bottom:8px}
 .ec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -200,7 +204,7 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
       </div>
       <div class="card">
         <div class="card-title">💼 あなたの働き方</div>
-        <div class="cg" id="myWorkCg">
+        <div class="work-grid" id="myWorkCg">
           <button class="cb" data-v="employee"         onclick="chooseMyWork(this)">会社員・公務員</button>
           <button class="cb" data-v="self"             onclick="chooseMyWork(this)">自営業・フリーランス</button>
           <button class="cb" data-v="homemaker"        onclick="chooseMyWork(this)">専業主婦・主夫<small>（無収入）</small></button>
@@ -230,7 +234,7 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
           </div>
           <div class="fg" style="margin-bottom:0">
             <div class="fl">配偶者の働き方</div>
-            <div class="cg" id="spouseWorkCg">
+            <div class="work-grid" id="spouseWorkCg">
               <button class="cb" data-v="employee"         onclick="chooseSpouseWork(this)">会社員・公務員</button>
               <button class="cb" data-v="self"             onclick="chooseSpouseWork(this)">自営業・フリーランス</button>
               <button class="cb" data-v="homemaker"        onclick="chooseSpouseWork(this)">専業主婦・主夫<small>（無収入）</small></button>
