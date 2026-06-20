@@ -167,6 +167,16 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .disclaimer{font-size:11px;color:var(--text-muted);line-height:1.8;padding:16px;background:white;border-radius:var(--radius);margin-bottom:18px;box-shadow:var(--shadow)}
 .disclaimer-title{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:8px}
 @media(max-width:400px){.ot-row,.ot-head{grid-template-columns:60px 1fr 80px 32px}}
+.edu-blk-done{background:#F0F0F0;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.edu-blk-done .edu-blk-title{font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:0;flex:0 0 auto}
+.edu-done-note{font-size:11px;color:var(--text-muted);line-height:1.5}
+.chart-nav{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 0}
+.chart-nav-btn{flex:0 0 auto;width:36px;height:36px;border:2px solid var(--border);border-radius:var(--radius-sm);background:white;cursor:pointer;font-size:16px;font-family:'Noto Sans JP',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;line-height:1}
+.chart-nav-btn:hover:not(:disabled){border-color:var(--primary);background:#FFF5F0}
+.chart-nav-btn:disabled{opacity:.3;cursor:default}
+.chart-nav-slider{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none;cursor:pointer}
+.chart-nav-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--primary);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.chart-nav-lbl{flex:0 0 auto;font-size:12px;color:var(--text-light);white-space:nowrap;min-width:72px;text-align:center;font-weight:500}
 </style>
 </head>
 <body>
@@ -399,6 +409,12 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
         <button class="cb on" data-p="40" onclick="chooseSimPeriod(this)">40年</button>
         <button class="cb" data-p="9999" onclick="chooseSimPeriod(this)">100歳まで</button>
       </div>
+      <div class="chart-nav" id="chartNav" style="display:none">
+        <button class="chart-nav-btn" id="chartPrev" onclick="shiftWindow(-1)">◀</button>
+        <input type="range" class="chart-nav-slider" id="chartWinSlider" min="0" max="0" value="0" oninput="setWindowStart(parseInt(this.value))">
+        <button class="chart-nav-btn" id="chartNext" onclick="shiftWindow(1)">▶</button>
+        <span class="chart-nav-lbl" id="chartNavLbl"></span>
+      </div>
       <div class="tab-btns"><button class="tab-btn on" onclick="switchTab('graph',this)">📊 グラフ</button><button class="tab-btn" onclick="switchTab('table',this)">📋 キャッシュフロー表</button></div>
       <div class="tab-pane on" id="tabGraph"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
       <div class="tab-pane"    id="tabTable"><div class="tbl-wrap"><table class="cf-tbl" id="cfTbl"></table></div></div>
@@ -450,6 +466,7 @@ function startSim(){
 
 function restartSim(){
   if(chartInst){chartInst.destroy();chartInst=null;}
+  fullSimData=null;windowStart=0;
   Object.assign(S,{
     age:35,workStyle:null,myRetiredStyle:'employee',
     spouse:null,spouseAge:35,spouseWorkStyle:null,spRetiredStyle:'employee',
@@ -751,11 +768,24 @@ function renderEdu(){
   const uniOpts=[{v:'none',l:'大学進学なし'},{v:'natl',l:'国公立大学'},{v:'pvlib',l:'私立文系'},{v:'pvsci',l:'私立理系'},{v:'medical',l:'私立医大（6年制）'}];
   c.innerHTML=Array.from({length:n},(_,i)=>{
     const ch=S.children[i]||{age:0,k3:'pub',h:'pub',uni:'natl'};
-    return `<div class="card"><div class="card-title">🎒 ${labels[i]}（${ch.age}歳）の進路</div>
-      <div class="edu-blk"><div class="edu-blk-title">幼稚園〜中学校</div><div class="cg" id="k3Cg${i}"><button class="cb ${ch.k3==='pub'?'on':''}" onclick="updChild(${i},'k3','pub',this)">公立</button><button class="cb ${ch.k3==='prv'?'on':''}" onclick="updChild(${i},'k3','prv',this)">私立</button></div></div>
-      <div class="edu-blk"><div class="edu-blk-title">高校</div><div class="cg" id="hCg${i}"><button class="cb ${ch.h==='pub'?'on':''}" onclick="updChild(${i},'h','pub',this)">公立</button><button class="cb ${ch.h==='prv'?'on':''}" onclick="updChild(${i},'h','prv',this)">私立</button></div></div>
-      <div class="edu-blk" style="margin-bottom:0"><div class="edu-blk-title">大学・進学先</div><div class="uni-grid">${uniOpts.map(o=>`<button class="cb ${ch.uni===o.v?'on':''}" onclick="updChild(${i},'uni','${o.v}',this)">${o.l}</button>`).join('')}</div></div>
-    </div>`;
+    const age=ch.age;
+    const showK3=age<15,showH=age<18,showUni=age<24;
+    if(!showK3&&!showH&&!showUni){
+      return `<div class="card"><div class="card-title">🎒 ${labels[i]}（${age}歳）の進路</div>
+        <div class="info-box">現在${age}歳のため、すべての教育費の計算期間を過ぎています。</div></div>`;
+    }
+    const doneNote=(txt)=>`<div class="edu-blk-done"><span class="edu-blk-title">${txt}</span><span class="edu-done-note">現在${age}歳のため対象外</span></div>`;
+    const k3Block=showK3
+      ?`<div class="edu-blk"><div class="edu-blk-title">幼稚園〜中学校</div><div class="cg" id="k3Cg${i}"><button class="cb ${ch.k3==='pub'?'on':''}" onclick="updChild(${i},'k3','pub',this)">公立</button><button class="cb ${ch.k3==='prv'?'on':''}" onclick="updChild(${i},'k3','prv',this)">私立</button></div></div>`
+      :doneNote('幼稚園〜中学校');
+    const hBlock=showH
+      ?`<div class="edu-blk"><div class="edu-blk-title">高校</div><div class="cg" id="hCg${i}"><button class="cb ${ch.h==='pub'?'on':''}" onclick="updChild(${i},'h','pub',this)">公立</button><button class="cb ${ch.h==='prv'?'on':''}" onclick="updChild(${i},'h','prv',this)">私立</button></div></div>`
+      :doneNote('高校');
+    const uniBlock=showUni
+      ?`<div class="edu-blk" style="margin-bottom:0"><div class="edu-blk-title">大学・進学先</div><div class="uni-grid">${uniOpts.map(o=>`<button class="cb ${ch.uni===o.v?'on':''}" onclick="updChild(${i},'uni','${o.v}',this)">${o.l}</button>`).join('')}</div></div>`
+      :doneNote('大学');
+    return `<div class="card"><div class="card-title">🎒 ${labels[i]}（${age}歳）の進路</div>
+      ${k3Block}${hBlock}${uniBlock}</div>`;
   }).join('');
 }
 function updChild(i,f,v,btn){S.children[i]=S.children[i]||{age:0,k3:'pub',h:'pub',uni:'natl'};S.children[i][f]=v;btn.closest('.cg,.uni-grid').querySelectorAll('.cb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
@@ -824,11 +854,47 @@ function simPeriodDesc(){
   return y<sel?y+'年間（100歳まで）':sel+'年間';
 }
 
-function simulate(){
+let fullSimData=null,windowStart=0;
+
+function getWindowedData(){
+  if(!fullSimData)return[];
+  const period=getSimYears();
+  const end=Math.min(windowStart+period,fullSimData.length-1);
+  return fullSimData.slice(windowStart,end+1);
+}
+function setWindowStart(v){
+  const period=getSimYears();
+  const maxStart=fullSimData?Math.max(0,fullSimData.length-1-period):0;
+  windowStart=Math.max(0,Math.min(maxStart,v));
+  renderChart(getWindowedData());
+  renderTable(getWindowedData());
+  updateChartNav();
+}
+function shiftWindow(dir){
+  setWindowStart(windowStart+dir*getSimYears());
+}
+function updateChartNav(){
+  const period=getSimYears();
+  const fullLen=fullSimData?fullSimData.length-1:0;
+  const maxStart=Math.max(0,fullLen-period);
+  const nav=document.getElementById('chartNav');
+  if(!nav)return;
+  nav.style.display=maxStart>0?'flex':'none';
+  const sl=document.getElementById('chartWinSlider');
+  if(sl){sl.max=maxStart;sl.value=windowStart;}
+  const lbl=document.getElementById('chartNavLbl');
+  if(lbl){const s=S.age+windowStart,e=Math.min(100,S.age+windowStart+period);lbl.textContent=s+'〜'+e+'歳';}
+  const prev=document.getElementById('chartPrev');
+  const next=document.getElementById('chartNext');
+  if(prev)prev.disabled=windowStart<=0;
+  if(next)next.disabled=windowStart>=maxStart;
+}
+
+function simulate(periods){
   let inv=S.invBal,sav=S.savBal;
   const myPen=getMyPensionNet(),spPen=getSpPensionNet();
-  const periods=getSimYears();
-  return Array.from({length:periods+1},(_,y)=>{
+  const n=periods!==undefined?periods:getSimYears();
+  return Array.from({length:n+1},(_,y)=>{
     const inc=personIncome(S.age,S.workStyle,S.myGrossAnnual,S.myRetireAge,y,myPen)
              +bonusInYear(S.age,S.workStyle,S.myRetireAge,S.myBonusKey,y)
              +(S.spouse==='yes'?personIncome(S.spouseAge,S.spouseWorkStyle,S.spouseGrossAnnual,S.spouseRetireAge,y,spPen)+bonusInYear(S.spouseAge,S.spouseWorkStyle,S.spouseRetireAge,S.spouseBonusKey,y):0)
@@ -860,21 +926,26 @@ function backToInput(){
 let chartInst=null;
 function calcAndShow(){
   readInputs();
-  const data=simulate();
+  windowStart=0;
+  fullSimData=simulate(Math.max(0,100-S.age));
   document.getElementById('simulator').classList.remove('on');
   document.getElementById('results').classList.add('on');
   document.getElementById('resHdTxt').textContent=`あなたの${simPeriodDesc()}の資産推移をシミュレーションしました`;
   window.scrollTo(0,0);
-  renderSum(data);renderChart(data);renderTable(data);renderCTA(data);
+  const sumData=fullSimData.slice(0,getSimYears()+1);
+  renderSum(sumData);renderChart(getWindowedData());renderTable(getWindowedData());renderCTA(sumData);
+  updateChartNav();
 }
 
 function chooseSimPeriod(btn){
   document.querySelectorAll('.period-row .cb').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   S.simPeriod=parseInt(btn.dataset.p);
+  windowStart=0;
   document.getElementById('resHdTxt').textContent=`あなたの${simPeriodDesc()}の資産推移をシミュレーションしました`;
-  const data=simulate();
-  renderSum(data);renderChart(data);renderTable(data);
+  const sumData=fullSimData?fullSimData.slice(0,getSimYears()+1):simulate(getSimYears());
+  renderSum(sumData);renderChart(getWindowedData());renderTable(getWindowedData());
+  updateChartNav();
 }
 
 function renderSum(data){
