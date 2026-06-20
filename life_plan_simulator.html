@@ -558,6 +558,17 @@ function setAge(v){
       renderStep2();renderPension();
     }
   }
+  updateChildSliderMax();
+}
+function updateChildSliderMax(){
+  const max=Math.max(0,S.age-18);
+  for(let i=0;i<Math.min(S.childCount,3);i++){
+    const sl=document.getElementById('ca'+i);if(!sl)continue;
+    sl.max=max;
+    const lbl=sl.nextElementSibling;if(lbl)lbl.querySelector('span:last-child').textContent=max+'歳';
+    if(parseInt(sl.value)>max){sl.value=max;setChildAge(i,max);}
+    else{const pct=max>0?(parseInt(sl.value)/max)*100:0;sl.style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;}
+  }
 }
 
 function updateSpouseAge(v){
@@ -603,12 +614,14 @@ function chooseSpRetiredStyle(btn){selBtn('#spRetiredStyleCg',btn);S.spRetiredSt
 
 function chooseChildren(btn){
   selBtn('#childCg',btn);S.childCount=parseInt(btn.dataset.v);S.children=[];
-  const n=Math.min(S.childCount,3),labels=['第1子','第2子','第3子'],defs=[5,3,1],c=document.getElementById('childAges');
+  const n=Math.min(S.childCount,3),labels=['第1子','第2子','第3子'],c=document.getElementById('childAges');
+  const maxAge=Math.max(0,S.age-18),rawDefs=[5,3,1];
   if(!n){c.innerHTML='';return;}
-  c.innerHTML=Array.from({length:n},(_,i)=>`<div class="fg" style="margin-bottom:18px"><div class="fl">${labels[i]}の年齢</div><div class="age-disp" id="caTxt${i}">${defs[i]}<span>歳</span></div><input type="range" class="slider" id="ca${i}" min="0" max="60" value="${defs[i]}" oninput="setChildAge(${i},this.value)"><div class="slider-lbls"><span>0歳</span><span>60歳</span></div></div>`).join('');
+  c.innerHTML=Array.from({length:n},(_,i)=>{const d=Math.min(rawDefs[i],maxAge);return`<div class="fg" style="margin-bottom:18px"><div class="fl">${labels[i]}の年齢</div><div class="age-disp" id="caTxt${i}">${d}<span>歳</span></div><input type="range" class="slider" id="ca${i}" min="0" max="${maxAge}" value="${d}" oninput="setChildAge(${i},this.value)"><div class="slider-lbls"><span>0歳</span><span>${maxAge}歳</span></div></div>`;}).join('');
   for(let i=0;i<n;i++){
-    S.children[i]={age:defs[i],k3:'pub',h:'pub',uni:'natl'};
-    const pct=(defs[i]/60)*100,sl=document.getElementById('ca'+i);
+    const d=Math.min(rawDefs[i],maxAge);
+    S.children[i]={age:d,k3:'pub',h:'pub',uni:'natl'};
+    const pct=maxAge>0?(d/maxAge)*100:0,sl=document.getElementById('ca'+i);
     if(sl)sl.style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;
   }
 }
@@ -617,7 +630,7 @@ function setChildAge(i,v){
   S.children[i].age=parseInt(v);
   const el=document.getElementById('caTxt'+i);if(el)el.innerHTML=v+'<span>歳</span>';
   const sl=document.getElementById('ca'+i);
-  if(sl){const pct=(v/60)*100;sl.style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;}
+  if(sl){const max=parseInt(sl.max)||60;const pct=max>0?(v/max)*100:0;sl.style.background=`linear-gradient(to right,var(--primary) 0%,var(--primary) ${pct}%,var(--border) ${pct}%,var(--border) 100%)`;}
 }
 
 // 年金計算
