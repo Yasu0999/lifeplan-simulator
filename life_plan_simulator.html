@@ -166,6 +166,24 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .btn-back-to-input:hover{background:#FFF5F0;}
 .disclaimer{font-size:11px;color:var(--text-muted);line-height:1.8;padding:16px;background:white;border-radius:var(--radius);margin-bottom:18px;box-shadow:var(--shadow)}
 .disclaimer-title{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:8px}
+.calc-note{background:white;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.calc-note-btn{width:100%;padding:14px 18px;background:none;border:none;text-align:left;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;font-family:'Noto Sans JP',sans-serif;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
+.calc-note-btn:hover{background:#FFF9F0}
+.calc-note-body{padding:0 18px 18px;display:none}
+.calc-section{margin-bottom:14px}
+.calc-section:last-child{margin-bottom:0}
+.calc-section-title{font-size:12px;font-weight:700;color:var(--primary-dark);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.calc-row{display:grid;grid-template-columns:1fr 1fr;font-size:12px;padding:5px 0;border-bottom:1px solid #F5F0E8;line-height:1.5;gap:8px;align-items:start}
+.calc-row:last-child{border-bottom:none}
+.calc-row span:first-child{color:var(--text-light)}
+.calc-row span:not(:first-child){color:var(--text);font-weight:500;text-align:right}
+.calc-row-3{grid-template-columns:1fr 1fr 1fr}
+.calc-row-4{grid-template-columns:1.4fr 1fr 1fr 50px}
+.calc-tbl-head{display:grid;font-size:11px;font-weight:700;color:var(--text-muted);padding:4px 0 2px;gap:8px}
+.calc-tbl-head.calc-row-3{grid-template-columns:1fr 1fr 1fr}
+.calc-tbl-head.calc-row-4{grid-template-columns:1.4fr 1fr 1fr 50px}
+.calc-tbl-head span:not(:first-child){text-align:right}
+.calc-note-arrow{transition:transform .2s;display:inline-block;font-size:12px;color:var(--text-muted)}
 @media(max-width:400px){.ot-row,.ot-head{grid-template-columns:60px 1fr 80px 32px}}
 .edu-blk-done{background:#F0F0F0;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .edu-blk-done .edu-blk-title{font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:0;flex:0 0 auto}
@@ -427,6 +445,64 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
       <button class="btn-cta" id="ctaBtn">📩 無料相談を申し込む</button><br>
       <button class="btn-back-to-input" onclick="backToInput()">← 入力内容を修正する</button><br>
       <button class="btn-restart" onclick="restartSim()">もう一度やり直す</button>
+    </div>
+    <div class="calc-note">
+      <button class="calc-note-btn" onclick="toggleCalcNote(this)">
+        <span>📐 計算根拠・前提条件</span>
+        <span class="calc-note-arrow">▼</span>
+      </button>
+      <div class="calc-note-body" id="calcNoteBody">
+        <div class="calc-section">
+          <div class="calc-section-title">収入の計算</div>
+          <div class="calc-row"><span>会社員・公務員</span><span>年収（額面）× 80% を手取りとして計算</span></div>
+          <div class="calc-row"><span>自営業・フリーランス</span><span>売上－経費（手取りベース）をそのまま使用</span></div>
+          <div class="calc-row"><span>専業主婦・主夫（収入あり）</span><span>パート・副業収入をそのまま使用</span></div>
+          <div class="calc-row"><span>専業主婦・主夫（無収入）</span><span>勤労収入は 0 円として計算</span></div>
+        </div>
+        <div class="calc-section">
+          <div class="calc-section-title">公的年金（自動計算の場合）</div>
+          <div class="calc-row"><span>会社員・公務員</span><span>月額 約15.5万円（額面）→ 手取り 約13.9万円</span></div>
+          <div class="calc-row"><span>自営業・フリーランス</span><span>月額 約5.9万円（額面）→ 手取り 約5.3万円</span></div>
+          <div class="calc-row"><span>専業主婦・主夫</span><span>月額 約5.9万円（額面）→ 手取り 約5.3万円</span></div>
+          <div class="calc-row"><span>受給開始・税率</span><span>65歳から受給 / 手取り = 額面 × 90%</span></div>
+        </div>
+        <div class="calc-section">
+          <div class="calc-section-title">退職金（会社員・公務員のみ）</div>
+          <div class="calc-row"><span>なし</span><span>0 万円</span></div>
+          <div class="calc-row"><span>〜500万円</span><span>250 万円として計算</span></div>
+          <div class="calc-row"><span>500〜1,000万円</span><span>750 万円として計算</span></div>
+          <div class="calc-row"><span>1,000〜2,000万円</span><span>1,500 万円として計算</span></div>
+        </div>
+        <div class="calc-section">
+          <div class="calc-section-title">教育費（年額）— 文部科学省「子供の学習費調査」等をもとに設定</div>
+          <div class="calc-tbl-head calc-row-3"><span></span><span>公立</span><span>私立</span></div>
+          <div class="calc-row calc-row-3"><span>幼稚園（3年間）</span><span>18.5万円/年</span><span>34.7万円/年</span></div>
+          <div class="calc-row calc-row-3"><span>小学校（6年間）</span><span>33.6万円/年</span><span>182.8万円/年</span></div>
+          <div class="calc-row calc-row-3"><span>中学校（3年間）</span><span>54.2万円/年</span><span>156.0万円/年</span></div>
+          <div class="calc-row calc-row-3"><span>高校（3年間）</span><span>59.8万円/年</span><span>103.0万円/年</span></div>
+        </div>
+        <div class="calc-section">
+          <div class="calc-section-title">大学費用</div>
+          <div class="calc-tbl-head calc-row-4"><span></span><span>初年度</span><span>2年目以降/年</span><span>年数</span></div>
+          <div class="calc-row calc-row-4"><span>国立大学</span><span>84万円</span><span>54万円</span><span>4年</span></div>
+          <div class="calc-row calc-row-4"><span>私立大学（文系）</span><span>121万円</span><span>99万円</span><span>4年</span></div>
+          <div class="calc-row calc-row-4"><span>私立大学（理系）</span><span>160万円</span><span>136万円</span><span>4年</span></div>
+          <div class="calc-row calc-row-4"><span>医歯薬系</span><span>478万円</span><span>370万円</span><span>6年</span></div>
+        </div>
+        <div class="calc-section">
+          <div class="calc-section-title">住居費の計算</div>
+          <div class="calc-row"><span>賃貸</span><span>月額 × 12ヶ月</span></div>
+          <div class="calc-row"><span>住宅ローン（返済中）</span><span>月額 × 12 ＋ ボーナス払い（年額）</span></div>
+          <div class="calc-row"><span>住宅ローン（完済後）</span><span>維持費（固定資産税・修繕費）のみ</span></div>
+          <div class="calc-row"><span>持ち家（ローンなし）</span><span>維持費（固定資産税・修繕費）のみ</span></div>
+        </div>
+        <div class="calc-section">
+          <div class="calc-section-title">運用資産の計算</div>
+          <div class="calc-row"><span>計算方法</span><span>設定利回りで年次複利計算</span></div>
+          <div class="calc-row"><span>預貯金</span><span>利回りなし（元本のみ積み上げ）</span></div>
+          <div class="calc-row"><span>積立期間</span><span>退職年齢まで毎年継続する前提</span></div>
+        </div>
+      </div>
     </div>
     <div class="disclaimer">
       <div class="disclaimer-title">【ご注意事項】</div>
@@ -931,6 +1007,13 @@ function simulate(periods){
   });
 }
 
+function toggleCalcNote(btn){
+  const body=document.getElementById('calcNoteBody');
+  const arrow=btn.querySelector('.calc-note-arrow');
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(open)arrow.style.transform='';else arrow.style.transform='rotate(180deg)';
+}
 function backToInput(){
   document.getElementById('results').classList.remove('on');
   document.getElementById('simulator').classList.add('on');
