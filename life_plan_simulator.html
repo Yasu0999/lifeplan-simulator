@@ -350,6 +350,7 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
       <div class="card" id="loanCard" style="display:none">
         <div class="card-title">🏦 住宅ローン</div>
         <div class="fg"><div class="fl">毎月の返済額</div><div class="iunit"><input type="number" class="fi" id="loanAmt" placeholder="例：10" min="0"><span class="unit">万円 / 月</span></div></div>
+        <div class="fg"><div class="fl">ボーナス払い（年2回の合計額 / 任意）</div><div class="iunit"><input type="number" class="fi" id="loanBonus" placeholder="例：30" min="0"><span class="unit">万円 / 年</span></div></div>
         <div class="fg"><div class="fl">残りの返済期間</div><div class="iunit"><input type="number" class="fi" id="loanYrs" placeholder="例：25" min="1" max="35"><span class="unit">年</span></div></div>
         <div class="fg"><div class="fl">維持費（固定資産税・修繕費 月換算）</div><div class="iunit"><input type="number" class="fi" id="loanMaint" placeholder="例：2" min="0"><span class="unit">万円 / 月</span></div></div>
       </div>
@@ -448,7 +449,7 @@ const S={
   spouseGrossAnnual:0,spouseRetireAge:65,spouseBonusKey:'none',
   otherIncome:0,
   living:0,livingDirect:0,oneTime:[],
-  houseType:null,rentAmt:0,loanAmt:0,loanYrs:0,loanMaint:0,ownedMaint:0,
+  houseType:null,rentAmt:0,loanAmt:0,loanBonus:0,loanYrs:0,loanMaint:0,ownedMaint:0,
   savBal:0,invBal:0,savSave:0,invSave:0,rate:0.03,
   pensionMode:'auto',myPensionManual:0,spPensionManual:0,
   simPeriod:40,
@@ -474,7 +475,7 @@ function restartSim(){
     myGrossAnnual:0,myRetireAge:65,myBonusKey:'none',
     spouseGrossAnnual:0,spouseRetireAge:65,spouseBonusKey:'none',
     otherIncome:0,living:0,livingDirect:0,oneTime:[],
-    houseType:null,rentAmt:0,loanAmt:0,loanYrs:0,loanMaint:0,ownedMaint:0,
+    houseType:null,rentAmt:0,loanAmt:0,loanBonus:0,loanYrs:0,loanMaint:0,ownedMaint:0,
     savBal:0,invBal:0,savSave:0,invSave:0,rate:0.03,
     pensionMode:'auto',myPensionManual:0,spPensionManual:0,simPeriod:40,step:0
   });
@@ -511,7 +512,7 @@ function restartSim(){
   document.querySelectorAll('.period-row .cb').forEach(b=>b.classList.remove('on'));
   document.querySelector('.period-row .cb[data-p="40"]').classList.add('on');
   // 住宅入力欄リセット
-  ['rentAmt','loanAmt','loanYrs','loanMaint','ownedMaint'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['rentAmt','loanAmt','loanBonus','loanYrs','loanMaint','ownedMaint'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   // 画面切替
   document.getElementById('results').classList.remove('on');
   document.getElementById('simulator').classList.remove('on');
@@ -554,6 +555,10 @@ function validate(n){
     case 1:
       if((S.workStyle==='employee'||S.workStyle==='self'||S.workStyle==='homemaker_income')&&!S.myGrossAnnual){alert('あなたの収入を入力してください。');return false;}
       if(S.spouse==='yes'&&(S.spouseWorkStyle==='employee'||S.spouseWorkStyle==='self'||S.spouseWorkStyle==='homemaker_income')&&!S.spouseGrossAnnual){alert('配偶者の収入を入力してください。');return false;}
+      if(S.pensionMode==='manual'){
+        if(!(parseFloat(document.getElementById('myPenInput')?.value)||0)){alert('あなたの年金月額を入力してください。');return false;}
+        if(S.spouse==='yes'&&!(parseFloat(document.getElementById('spPenInput')?.value)||0)){alert('配偶者の年金月額を入力してください。');return false;}
+      }
       return true;
     case 2:
       if(!S.living&&!S.livingDirect){alert('毎月の生活費を選択または入力してください。');return false;}
@@ -563,6 +568,14 @@ function validate(n){
       if(S.houseType==='rent'&&!parseFloat(document.getElementById('rentAmt').value)){alert('家賃を入力してください。');return false;}
       if(S.houseType==='loan'&&!parseFloat(document.getElementById('loanAmt').value)){alert('ローン返済額を入力してください。');return false;}
       return true;
+    case 5:{
+      const sb=parseFloat(document.getElementById('savBal')?.value)||0;
+      const ib=parseFloat(document.getElementById('invBal')?.value)||0;
+      const ss=parseFloat(document.getElementById('savSave')?.value)||0;
+      const is=parseFloat(document.getElementById('invSave')?.value)||0;
+      if(!sb&&!ib&&!ss&&!is){return confirm('資産・積立がすべて未入力です。\nすべて0円として計算してよろしいですか？');}
+      return true;
+    }
     default:return true;
   }
 }
@@ -718,8 +731,8 @@ function buildIncomeHTML(ws,gross,retireAge,bonusKey,pfx){
   if(ws==='homemaker') return '<div class="info-box">専業主婦・主夫（無収入）の場合、勤労収入は0円として計算します。</div>';
   if(ws==='retired')   return '<div class="info-box">年金生活の場合、公的年金のみで計算します。年金額はSTEP1の選択または手入力で設定されます。</div>';
   const isEmp=ws==='employee', isSelf=ws==='self'||ws==='homemaker_income';
-  const label=isEmp?'額面年収（ボーナス含む）':(ws==='homemaker_income'?'年間収入（パート・副業など）':'売上－経費（年額）');
-  const hint=isEmp?'手取り（額面×80%）で自動計算します。':ws==='homemaker_income'?'年間のパート収入または副業収入を入力してください。':'売上から経費を差し引いた年間所得（手取りベース）を入力してください。';
+  const label=isEmp?'年収（ボーナス含む）':(ws==='homemaker_income'?'年間収入（パート・副業など）':'売上－経費（年額）');
+  const hint=isEmp?'額面から手取り（×80%）に換算して計算します。手取り額に直して入力する必要はありません。':ws==='homemaker_income'?'年間のパート収入または副業収入を入力してください。':'売上から経費を差し引いた年間所得（手取りベース）を入力してください。';
   const ph=isEmp?600:isSelf?200:200;
   const onInp=pfx==='my'?`S.myGrossAnnual=parseFloat(this.value)||0`:`S.spouseGrossAnnual=parseFloat(this.value)||0`;
   const onRetire=pfx==='my'?`chooseMyRetire(this)`:`chooseSpouseRetire(this)`;
@@ -802,7 +815,7 @@ function readInputs(){
   const rd=(id,key)=>{const el=document.getElementById(id);if(el&&el.value.trim()!==''){const v=parseFloat(el.value);if(!isNaN(v))S[key]=v;}};
   rd('myGross','myGrossAnnual');rd('spouseGross','spouseGrossAnnual');
   rd('otherIncome','otherIncome');rd('livingDirect','livingDirect');
-  rd('rentAmt','rentAmt');rd('loanAmt','loanAmt');rd('loanYrs','loanYrs');rd('loanMaint','loanMaint');rd('ownedMaint','ownedMaint');
+  rd('rentAmt','rentAmt');rd('loanAmt','loanAmt');rd('loanBonus','loanBonus');rd('loanYrs','loanYrs');rd('loanMaint','loanMaint');rd('ownedMaint','ownedMaint');
   rd('savBal','savBal');rd('invBal','invBal');rd('savSave','savSave');rd('invSave','invSave');
   rd('myPenInput','myPensionManual');rd('spPenInput','spPensionManual');
 }
@@ -825,7 +838,7 @@ function bonusInYear(baseAge,ws,retireAge,bonusKey,y){
 }
 function housingCost(y){
   if(S.houseType==='rent')return S.rentAmt*12;
-  if(S.houseType==='loan')return(y<S.loanYrs?S.loanAmt:0)*12+S.loanMaint*12;
+  if(S.houseType==='loan')return(y<S.loanYrs?(S.loanAmt*12+S.loanBonus):0)+S.loanMaint*12;
   if(S.houseType==='owned')return S.ownedMaint*12;
   return 0;
 }
@@ -983,7 +996,8 @@ function renderTable(data){
   let h=`<thead><tr><th>年</th><th>年齢</th><th>収入</th><th>支出</th><th>年間収支</th><th>預貯金</th><th>運用資産</th><th>総資産</th></tr></thead><tbody>`;
   data.forEach(d=>{
     const neg=d.cf<0,ms=d.ms.length?`<span class="ms-tag">★ ${d.ms.join('・')}</span>`:'';
-    h+=`<tr class="${d.ms.length?'ms':''}"><td>${d.yr}${ms}</td><td>${d.age}歳</td><td>${d.inc.toLocaleString()}万</td><td>${d.exp.toLocaleString()}万</td><td class="${neg?'neg':''}">${neg?'▲':'+'}${Math.abs(d.cf).toLocaleString()}万</td><td class="${d.sav<0?'neg':''}">${d.sav.toLocaleString()}万</td><td class="${d.inv<0?'neg':''}">${d.inv.toLocaleString()}万</td><td class="${d.total<0?'neg':''}"><strong>${d.total.toLocaleString()}万</strong></td></tr>`;
+    const dispSav=d.total<0?d.total:d.sav,dispInv=d.total<0?0:d.inv;
+    h+=`<tr class="${d.ms.length?'ms':''}"><td>${d.yr}${ms}</td><td>${d.age}歳</td><td>${d.inc.toLocaleString()}万</td><td>${d.exp.toLocaleString()}万</td><td class="${neg?'neg':''}">${neg?'▲':'+'}${Math.abs(d.cf).toLocaleString()}万</td><td class="${dispSav<0?'neg':''}">${dispSav.toLocaleString()}万</td><td class="${dispInv<0?'neg':''}">${dispInv.toLocaleString()}万</td><td class="${d.total<0?'neg':''}"><strong>${d.total.toLocaleString()}万</strong></td></tr>`;
   });
   document.getElementById('cfTbl').innerHTML=h+'</tbody>';
 }
