@@ -184,6 +184,14 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .calc-tbl-head.calc-row-4{grid-template-columns:1.4fr 1fr 1fr 50px}
 .calc-tbl-head span:not(:first-child){text-align:right}
 .calc-note-arrow{transition:transform .2s;display:inline-block;font-size:12px;color:var(--text-muted)}
+.income-suggest{background:#FFF5F0;border:2px solid var(--primary-light);border-radius:var(--radius-sm);padding:14px 16px;margin-top:8px}
+.income-suggest p{font-size:13px;color:var(--text);margin-bottom:10px;font-weight:500;line-height:1.5}
+.income-suggest-btns{display:flex;gap:8px}
+.income-suggest-btns button{flex:1;padding:10px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .2s;border:2px solid}
+.income-suggest-yes{background:var(--primary);color:white;border-color:var(--primary)}
+.income-suggest-yes:hover{background:var(--primary-dark);border-color:var(--primary-dark)}
+.income-suggest-no{background:white;color:var(--text-light);border-color:var(--border)}
+.income-suggest-no:hover{border-color:var(--text-light)}
 @media(max-width:400px){.ot-row,.ot-head{grid-template-columns:60px 1fr 80px 32px}}
 .edu-blk-done{background:#F0F0F0;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .edu-blk-done .edu-blk-title{font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:0;flex:0 0 auto}
@@ -629,8 +637,8 @@ function validate(n){
       }
       return true;
     case 1:
-      if((S.workStyle==='employee'||S.workStyle==='self'||S.workStyle==='homemaker_income')&&!S.myGrossAnnual){alert('あなたの収入を入力してください。');return false;}
-      if(S.spouse==='yes'&&(S.spouseWorkStyle==='employee'||S.spouseWorkStyle==='self'||S.spouseWorkStyle==='homemaker_income')&&!S.spouseGrossAnnual){alert('配偶者の収入を入力してください。');return false;}
+      if((S.workStyle==='employee'||S.workStyle==='self'||S.workStyle==='homemaker_income')&&!S.myGrossAnnual){showSuggestIncome('my');return false;}
+      if(S.spouse==='yes'&&(S.spouseWorkStyle==='employee'||S.spouseWorkStyle==='self'||S.spouseWorkStyle==='homemaker_income')&&!S.spouseGrossAnnual){showSuggestIncome('sp');return false;}
       if(S.pensionMode==='manual'){
         if((document.getElementById('myPenInput')?.value??'').trim()===''){alert('あなたの年金月額を入力してください。');return false;}
         if(S.spouse==='yes'&&(document.getElementById('spPenInput')?.value??'').trim()===''){alert('配偶者の年金月額を入力してください。');return false;}
@@ -810,14 +818,22 @@ function buildIncomeHTML(ws,gross,retireAge,bonusKey,pfx){
   const label=isEmp?'年収（ボーナス含む）':(ws==='homemaker_income'?'年間収入（パート・副業など）':'売上－経費（年額）');
   const hint=isEmp?'額面から手取り（×80%）に換算して計算します。手取り額に直して入力する必要はありません。':ws==='homemaker_income'?'年間のパート収入または副業収入を入力してください。':'売上から経費を差し引いた年間所得（手取りベース）を入力してください。';
   const ph=isEmp?600:isSelf?200:200;
+  const suggestTxt=isEmp?`年収${ph}万円`:ws==='homemaker_income'?`年間収入${ph}万円`:`年間所得${ph}万円`;
   const onInp=pfx==='my'?`S.myGrossAnnual=parseFloat(this.value)||0`:`S.spouseGrossAnnual=parseFloat(this.value)||0`;
   const onRetire=pfx==='my'?`chooseMyRetire(this)`:`chooseSpouseRetire(this)`;
   const onBonus=pfx==='my'?`chooseMyBonus(this)`:`chooseSpouseBonus(this)`;
   const r60=retireAge===60?'on':'',r65=retireAge===65?'on':'',r70=retireAge===70?'on':'';
   const bn=bonusKey==='none'?'on':'',bl=bonusKey==='lt500'?'on':'',b5=bonusKey==='b500k'?'on':'',b1=bonusKey==='b1000k'?'on':'';
   return `<div class="fg"><div class="fl">${label}</div>
-    <div class="iunit"><input type="number" class="fi" id="${pfx}Gross" placeholder="例：${ph}" min="0" value="${gross||''}" oninput="${onInp}"><span class="unit">万円 / 年</span></div>
+    <div class="iunit"><input type="number" class="fi" id="${pfx}Gross" placeholder="例：${ph}" min="0" value="${gross||''}" oninput="${onInp};dismissSuggestIncome('${pfx}')"><span class="unit">万円 / 年</span></div>
     <div class="fhint">${hint}</div></div>
+  <div class="income-suggest" id="${pfx}IncomeSuggest" style="display:none">
+    <p>例として${suggestTxt}で進めますか？</p>
+    <div class="income-suggest-btns">
+      <button class="income-suggest-yes" onclick="acceptSuggestIncome('${pfx}',${ph})">はい</button>
+      <button class="income-suggest-no" onclick="dismissSuggestIncome('${pfx}')">いいえ</button>
+    </div>
+  </div>
     <div class="fg"><div class="fl">退職予定年齢</div>
     <div class="cg" id="${pfx}RetireCg">
       <button class="cb ${r60}" data-v="60" onclick="${onRetire}">60歳</button>
@@ -1007,6 +1023,21 @@ function simulate(periods){
   });
 }
 
+function showSuggestIncome(pfx){
+  const el=document.getElementById(pfx+'IncomeSuggest');
+  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+function dismissSuggestIncome(pfx){
+  const el=document.getElementById(pfx+'IncomeSuggest');
+  if(el)el.style.display='none';
+}
+function acceptSuggestIncome(pfx,amt){
+  dismissSuggestIncome(pfx);
+  if(pfx==='my'){S.myGrossAnnual=amt;}else{S.spouseGrossAnnual=amt;}
+  const inp=document.getElementById(pfx+'Gross');
+  if(inp)inp.value=amt;
+  goNext();
+}
 function toggleCalcNote(btn){
   const body=document.getElementById('calcNoteBody');
   const arrow=btn.querySelector('.calc-note-arrow');
