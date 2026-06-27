@@ -184,6 +184,11 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .calc-tbl-head.calc-row-4{grid-template-columns:1.4fr 1fr 1fr 50px}
 .calc-tbl-head span:not(:first-child){text-align:right}
 .calc-note-arrow{transition:transform .2s;display:inline-block;font-size:12px;color:var(--text-muted)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:white;border-radius:var(--radius);padding:28px 24px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.25);text-align:center}
+.modal-msg{font-size:15px;color:var(--text);line-height:1.7;margin-bottom:20px;font-weight:500}
+.modal-ok{width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
+.modal-ok:hover{background:var(--primary-dark)}
 .income-suggest{background:#FFF5F0;border:2px solid var(--primary-light);border-radius:var(--radius-sm);padding:14px 16px;margin-top:8px}
 .income-suggest p{font-size:13px;color:var(--text);margin-bottom:10px;font-weight:500;line-height:1.5}
 .income-suggest-btns{display:flex;gap:8px}
@@ -630,27 +635,27 @@ function goPrev(){if(S.step>0)showStep(S.step-1);}
 function validate(n){
   switch(n){
     case 0:
-      if(!S.workStyle){alert('あなたの働き方を選択してください。');return false;}
-      if(!S.spouse){alert('配偶者の有無を選択してください。');return false;}
+      if(!S.workStyle){showAlert('あなたの働き方を選択してください。');return false;}
+      if(!S.spouse){showAlert('配偶者の有無を選択してください。');return false;}
       if(S.spouse==='yes'){
-        if(!S.spouseWorkStyle){alert('配偶者の働き方を選択してください。');return false;}
+        if(!S.spouseWorkStyle){showAlert('配偶者の働き方を選択してください。');return false;}
       }
       return true;
     case 1:
       if((S.workStyle==='employee'||S.workStyle==='self'||S.workStyle==='homemaker_income')&&!S.myGrossAnnual){showSuggestIncome('my');return false;}
       if(S.spouse==='yes'&&(S.spouseWorkStyle==='employee'||S.spouseWorkStyle==='self'||S.spouseWorkStyle==='homemaker_income')&&!S.spouseGrossAnnual){showSuggestIncome('sp');return false;}
       if(S.pensionMode==='manual'){
-        if((document.getElementById('myPenInput')?.value??'').trim()===''){alert('あなたの年金月額を入力してください。');return false;}
-        if(S.spouse==='yes'&&(document.getElementById('spPenInput')?.value??'').trim()===''){alert('配偶者の年金月額を入力してください。');return false;}
+        if((document.getElementById('myPenInput')?.value??'').trim()===''){showAlert('あなたの年金月額を入力してください。');return false;}
+        if(S.spouse==='yes'&&(document.getElementById('spPenInput')?.value??'').trim()===''){showAlert('配偶者の年金月額を入力してください。');return false;}
       }
       return true;
     case 2:
-      if(!S.living&&!S.livingDirect){alert('毎月の生活費を選択または入力してください。');return false;}
+      if(!S.living&&!S.livingDirect){showAlert('毎月の生活費を選択または入力してください。');return false;}
       return true;
     case 3:
-      if(!S.houseType){alert('住まいの種類を選択してください。');return false;}
-      if(S.houseType==='rent'&&!parseFloat(document.getElementById('rentAmt').value)){alert('家賃を入力してください。');return false;}
-      if(S.houseType==='loan'&&!parseFloat(document.getElementById('loanAmt').value)){alert('ローン返済額を入力してください。');return false;}
+      if(!S.houseType){showAlert('住まいの種類を選択してください。');return false;}
+      if(S.houseType==='rent'&&!parseFloat(document.getElementById('rentAmt').value)){showAlert('家賃を入力してください。');return false;}
+      if(S.houseType==='loan'&&!parseFloat(document.getElementById('loanAmt').value)){showAlert('ローン返済額を入力してください。');return false;}
       return true;
     case 5:{
       const sb=parseFloat(document.getElementById('savBal')?.value)||0;
@@ -1023,6 +1028,15 @@ function simulate(periods){
   });
 }
 
+function showAlert(msg){
+  document.getElementById('alertModalMsg').textContent=msg;
+  document.getElementById('alertModal').style.display='flex';
+}
+function closeAlertModal(e){
+  if(!e||e.target===document.getElementById('alertModal')){
+    document.getElementById('alertModal').style.display='none';
+  }
+}
 function showSuggestIncome(pfx){
   const el=document.getElementById(pfx+'IncomeSuggest');
   if(el){el.style.display='block';setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'center'}),50);}
@@ -1136,5 +1150,11 @@ function switchTab(tab,btn){
   document.getElementById(tab==='graph'?'tabGraph':'tabTable').classList.add('on');
 }
 </script>
+<div class="modal-overlay" id="alertModal" style="display:none" onclick="closeAlertModal(event)">
+  <div class="modal-box">
+    <p class="modal-msg" id="alertModalMsg"></p>
+    <button class="modal-ok" onclick="closeAlertModal()">OK</button>
+  </div>
+</div>
 </body>
 </html>
