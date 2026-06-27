@@ -337,7 +337,7 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
               <button class="cb" data-v="70" onclick="setPenStart('my',70,this)">70歳</button>
             </div>
             <div class="iunit pen-start-inp">
-              <input type="number" class="fi" id="myPenStartInput" value="65" placeholder="例：68" min="1" max="90" oninput="customPenStart('my',this)">
+              <input type="number" class="fi" id="myPenStartInput" value="65" placeholder="例：68" min="1" max="90" oninput="customPenStart('my',this)" onblur="blurPenStart('my',this)">
               <span class="unit">歳</span>
             </div>
           </div>
@@ -349,7 +349,7 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
               <button class="cb" data-v="70" onclick="setPenStart('sp',70,this)">70歳</button>
             </div>
             <div class="iunit pen-start-inp">
-              <input type="number" class="fi" id="spPenStartInput" value="65" placeholder="例：68" min="1" max="90" oninput="customPenStart('sp',this)">
+              <input type="number" class="fi" id="spPenStartInput" value="65" placeholder="例：68" min="1" max="90" oninput="customPenStart('sp',this)" onblur="blurPenStart('sp',this)">
               <span class="unit">歳</span>
             </div>
           </div>
@@ -1111,6 +1111,16 @@ function customPenStart(pfx,inp){
   const presetBtn=document.querySelector('#'+pfx+'PenStartCg .cb[data-v="'+age+'"]');
   if(presetBtn)presetBtn.classList.add('on');
   renderPension();
+}
+function blurPenStart(pfx,inp){
+  const age=parseInt(inp.value);
+  const minAge=pfx==='my'?S.age:S.spouseAge;
+  if(!age||age<minAge){
+    showAlert(`年金受給開始年齢は現在の年齢（${minAge}歳）以上にしてください。`);
+    const stored=pfx==='my'?S.myPensionStartAge:S.spPensionStartAge;
+    inp.value=stored;
+    inp.style.borderColor='';
+  }
 }
 function showConfirmModal(msg,onYes){
   document.getElementById('confirmModalMsg').textContent=msg;
