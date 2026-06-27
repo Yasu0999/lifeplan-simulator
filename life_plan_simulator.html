@@ -189,6 +189,11 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .modal-msg{font-size:15px;color:var(--text);line-height:1.7;margin-bottom:20px;font-weight:500}
 .modal-ok{width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
 .modal-ok:hover{background:var(--primary-dark)}
+.pen-start-block{margin-bottom:14px}
+.pen-start-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.pen-start-row:last-child{margin-bottom:0}
+.pen-start-lbl{font-size:12px;color:var(--text-light);flex:0 0 44px;font-weight:500}
+.pen-start-inp{flex:0 0 auto;width:106px}
 .income-suggest{background:#FFF5F0;border:2px solid var(--primary-light);border-radius:var(--radius-sm);padding:14px 16px;margin-top:8px}
 .income-suggest p{font-size:13px;color:var(--text);margin-bottom:10px;font-weight:500;line-height:1.5}
 .income-suggest-btns{display:flex;gap:8px}
@@ -317,8 +322,35 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
           <button class="cb on" data-v="auto"   onclick="choosePenMode(this)">自動計算（目安）</button>
           <button class="cb"    data-v="manual" onclick="choosePenMode(this)">金額を手入力</button>
         </div>
+        <div class="pen-start-block">
+          <div class="fl">年金受給開始年齢</div>
+          <div class="pen-start-row">
+            <span class="pen-start-lbl">あなた</span>
+            <div class="cg" id="myPenStartCg">
+              <button class="cb" data-v="60" onclick="setPenStart('my',60,this)">60歳</button>
+              <button class="cb on" data-v="65" onclick="setPenStart('my',65,this)">65歳</button>
+              <button class="cb" data-v="70" onclick="setPenStart('my',70,this)">70歳</button>
+            </div>
+            <div class="iunit pen-start-inp">
+              <input type="number" class="fi" id="myPenStartInput" value="65" placeholder="例：68" min="1" max="90" oninput="customPenStart('my',this)">
+              <span class="unit">歳</span>
+            </div>
+          </div>
+          <div class="pen-start-row" id="spPenStartRow" style="display:none">
+            <span class="pen-start-lbl">配偶者</span>
+            <div class="cg" id="spPenStartCg">
+              <button class="cb" data-v="60" onclick="setPenStart('sp',60,this)">60歳</button>
+              <button class="cb on" data-v="65" onclick="setPenStart('sp',65,this)">65歳</button>
+              <button class="cb" data-v="70" onclick="setPenStart('sp',70,this)">70歳</button>
+            </div>
+            <div class="iunit pen-start-inp">
+              <input type="number" class="fi" id="spPenStartInput" value="65" placeholder="例：68" min="1" max="90" oninput="customPenStart('sp',this)">
+              <span class="unit">歳</span>
+            </div>
+          </div>
+        </div>
         <div id="pensionAutoDisplay">
-          <p class="fhint" style="margin-bottom:12px">65歳から受給開始。STEP1の働き方をもとに自動で計算しています。</p>
+          <p class="fhint" style="margin-bottom:12px">STEP1の働き方をもとに自動で計算しています。</p>
           <div id="pensionDisplay"></div>
         </div>
         <div id="pensionManualInputs" style="display:none">
@@ -541,6 +573,7 @@ const S={
   houseType:null,rentAmt:0,loanAmt:0,loanBonus:0,loanYrs:0,loanMaint:0,ownedMaint:0,
   savBal:0,invBal:0,savSave:0,invSave:0,rate:0.03,
   pensionMode:'auto',myPensionManual:0,spPensionManual:0,
+  myPensionStartAge:65,spPensionStartAge:65,
   simPeriod:40,
   step:0,
 };
@@ -566,7 +599,8 @@ function restartSim(){
     otherIncome:0,living:0,livingDirect:0,oneTime:[],
     houseType:null,rentAmt:0,loanAmt:0,loanBonus:0,loanYrs:0,loanMaint:0,ownedMaint:0,
     savBal:0,invBal:0,savSave:0,invSave:0,rate:0.03,
-    pensionMode:'auto',myPensionManual:0,spPensionManual:0,simPeriod:40,step:0
+    pensionMode:'auto',myPensionManual:0,spPensionManual:0,
+    myPensionStartAge:65,spPensionStartAge:65,simPeriod:40,step:0
   });
   // STEP1 リセット
   document.querySelectorAll('#myWorkCg .cb,#spouseCg .cb,#spouseWorkCg .cb').forEach(b=>b.classList.remove('on'));
@@ -584,6 +618,12 @@ function restartSim(){
   document.getElementById('pensionManualInputs').style.display='none';
   const mpi=document.getElementById('myPenInput');if(mpi)mpi.value='';
   const spi=document.getElementById('spPenInput');if(spi)spi.value='';
+  ['my','sp'].forEach(pfx=>{
+    const inp=document.getElementById(pfx+'PenStartInput');if(inp)inp.value=65;
+    document.querySelectorAll('#'+pfx+'PenStartCg .cb').forEach(b=>b.classList.remove('on'));
+    const btn65=document.querySelector('#'+pfx+'PenStartCg .cb[data-v="65"]');if(btn65)btn65.classList.add('on');
+  });
+  document.getElementById('spPenStartRow').style.display='none';
   document.getElementById('otherIncome').value='';
   // STEP3 リセット
   document.querySelectorAll('.ec').forEach(e=>e.classList.remove('on'));
@@ -777,13 +817,17 @@ function getSpPensionNet(){
 }
 
 function renderPension(){
+  const spRow=document.getElementById('spPenStartRow');
+  if(spRow)spRow.style.display=(S.spouse==='yes')?'flex':'none';
   const el=document.getElementById('pensionDisplay');if(!el)return;
   if(S.pensionMode==='manual'){el.innerHTML='<div class="info-box">下の入力欄に金額をご入力ください。</div>';return;}
   const myPen=pensionNet(S.workStyle,S.myRetiredStyle);
-  let h=`<div class="pen-row"><span class="pl">あなた（65歳から）</span><span class="pa">${S.workStyle?`約${myPen.toFixed(1)}万円/月`:'（働き方を選択してください）'}</span></div>`;
+  const mySt=S.myPensionStartAge||65;
+  let h=`<div class="pen-row"><span class="pl">あなた（${mySt}歳から）</span><span class="pa">${S.workStyle?`約${myPen.toFixed(1)}万円/月`:'（働き方を選択してください）'}</span></div>`;
   if(S.spouse==='yes'&&S.spouseWorkStyle){
     const sp=pensionNet(S.spouseWorkStyle,S.spRetiredStyle);
-    h+=`<div class="pen-row"><span class="pl">配偶者（65歳から）</span><span class="pa">約${sp.toFixed(1)}万円/月</span></div>`;
+    const spSt=S.spPensionStartAge||65;
+    h+=`<div class="pen-row"><span class="pl">配偶者（${spSt}歳から）</span><span class="pa">約${sp.toFixed(1)}万円/月</span></div>`;
     if(S.workStyle) h+=`<div class="pen-total"><span class="pl">世帯合計</span><span class="pa">約${(myPen+sp).toFixed(1)}万円/月</span></div>`;
   }
   el.innerHTML=h;
@@ -917,17 +961,18 @@ function readInputs(){
   rd('myPenInput','myPensionManual');rd('spPenInput','spPensionManual');
 }
 
-function personIncome(baseAge,ws,gross,retireAge,y,pensionNetMo){
+function personIncome(baseAge,ws,gross,retireAge,y,pensionNetMo,penStartAge){
   if(!ws)return 0;
   const a=baseAge+y;
+  const ps=penStartAge||65;
   if(ws==='homemaker')return 0;
-  if(ws==='retired')return pensionNetMo*12;
+  if(ws==='retired')return a>=ps?pensionNetMo*12:0;
   if(ws==='homemaker_income'){
     if(a<retireAge)return gross;
-    return a>=65?pensionNetMo*12:0;
+    return a>=ps?pensionNetMo*12:0;
   }
   if(a<retireAge)return ws==='employee'?gross*0.8:gross;
-  return a>=65?pensionNetMo*12:0;
+  return a>=ps?pensionNetMo*12:0;
 }
 function bonusInYear(baseAge,ws,retireAge,bonusKey,y){
   if(ws!=='employee')return 0;
@@ -1005,9 +1050,9 @@ function simulate(periods){
   const myPen=getMyPensionNet(),spPen=getSpPensionNet();
   const n=periods!==undefined?periods:getSimYears();
   return Array.from({length:n+1},(_,y)=>{
-    const inc=personIncome(S.age,S.workStyle,S.myGrossAnnual,S.myRetireAge,y,myPen)
+    const inc=personIncome(S.age,S.workStyle,S.myGrossAnnual,S.myRetireAge,y,myPen,S.myPensionStartAge)
              +bonusInYear(S.age,S.workStyle,S.myRetireAge,S.myBonusKey,y)
-             +(S.spouse==='yes'?personIncome(S.spouseAge,S.spouseWorkStyle,S.spouseGrossAnnual,S.spouseRetireAge,y,spPen)+bonusInYear(S.spouseAge,S.spouseWorkStyle,S.spouseRetireAge,S.spouseBonusKey,y):0)
+             +(S.spouse==='yes'?personIncome(S.spouseAge,S.spouseWorkStyle,S.spouseGrossAnnual,S.spouseRetireAge,y,spPen,S.spPensionStartAge)+bonusInYear(S.spouseAge,S.spouseWorkStyle,S.spouseRetireAge,S.spouseBonusKey,y):0)
              +S.otherIncome*12;
     const hous=housingCost(y),liv=effLiving()*12;
     const edu=S.children.slice(0,Math.min(S.childCount,3)).reduce((s,ch)=>s+childEduCost(ch,y),0);
@@ -1020,14 +1065,35 @@ function simulate(periods){
     if(cf>=0){sav+=cf;}
     else{const d=-cf;if(sav>=d)sav-=d;else{inv-=(d-sav);sav=0;}}
     const ms=[],ageNow=S.age+y;
-    if(ageNow===S.myRetireAge&&(S.workStyle==='employee'||S.workStyle==='self'||S.workStyle==='homemaker_income'))ms.push('退職・年金開始');
+    if(ageNow===S.myRetireAge&&(S.workStyle==='employee'||S.workStyle==='self'||S.workStyle==='homemaker_income'))ms.push('退職');
+    if(ageNow===S.myPensionStartAge&&S.workStyle!=='homemaker')ms.push('年金受給開始');
     if(S.spouse==='yes'&&S.spouseAge+y===S.spouseRetireAge&&(S.spouseWorkStyle==='employee'||S.spouseWorkStyle==='self'||S.spouseWorkStyle==='homemaker_income'))ms.push('配偶者 退職');
+    if(S.spouse==='yes'&&S.spouseAge+y===S.spPensionStartAge&&S.spouseWorkStyle!=='homemaker')ms.push('配偶者 年金開始');
     if(S.houseType==='loan'&&y===Math.ceil(S.loanYrs))ms.push('ローン完済');
     S.oneTime.forEach(e=>{if(parseInt(e.yrs)===y&&e.name)ms.push(e.name);});
     return{y,yr:new Date().getFullYear()+y,age:ageNow,inc:Math.round(inc),exp:Math.round(totalExp+iS+sS),cf:Math.round(cf),inv:Math.round(inv),sav:Math.round(sav),total:Math.round(inv+sav),ms};
   });
 }
 
+function setPenStart(pfx,age,btn){
+  const minAge=pfx==='my'?S.age:S.spouseAge;
+  if(age<minAge){showAlert(`年金受給開始年齢は現在の年齢（${minAge}歳）以上にしてください。`);return;}
+  if(pfx==='my')S.myPensionStartAge=age;else S.spPensionStartAge=age;
+  selBtn('#'+pfx+'PenStartCg',btn);
+  const inp=document.getElementById(pfx+'PenStartInput');if(inp)inp.value=age;
+  renderPension();
+}
+function customPenStart(pfx,inp){
+  const age=parseInt(inp.value);
+  const minAge=pfx==='my'?S.age:S.spouseAge;
+  if(!age||age<minAge){inp.style.borderColor='var(--primary)';return;}
+  inp.style.borderColor='';
+  if(pfx==='my')S.myPensionStartAge=age;else S.spPensionStartAge=age;
+  document.querySelectorAll('#'+pfx+'PenStartCg .cb').forEach(b=>b.classList.remove('on'));
+  const presetBtn=document.querySelector('#'+pfx+'PenStartCg .cb[data-v="'+age+'"]');
+  if(presetBtn)presetBtn.classList.add('on');
+  renderPension();
+}
 function showAlert(msg){
   document.getElementById('alertModalMsg').textContent=msg;
   document.getElementById('alertModal').style.display='flex';
