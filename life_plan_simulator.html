@@ -693,6 +693,8 @@ function validate(n){
         if((document.getElementById('myPenInput')?.value??'').trim()===''){showAlert('あなたの年金月額を入力してください。');return false;}
         if(S.spouse==='yes'&&(document.getElementById('spPenInput')?.value??'').trim()===''){showAlert('配偶者の年金月額を入力してください。');return false;}
       }
+      if(S.myPensionStartAge<S.age){showAlert(`年金受給開始年齢は現在の年齢（${S.age}歳）以上にしてください。`);return false;}
+      if(S.spouse==='yes'&&S.spPensionStartAge<S.spouseAge){showAlert(`配偶者の年金受給開始年齢は配偶者の年齢（${S.spouseAge}歳）以上にしてください。`);return false;}
       return true;
     case 2:
       if(!S.living&&!S.livingDirect){showAlert('毎月の生活費を選択または入力してください。');return false;}
@@ -734,6 +736,12 @@ function setAge(v){
     }
   }
   updateChildSliderMax();
+  if(S.myPensionStartAge<S.age){
+    S.myPensionStartAge=S.age;
+    const pi=document.getElementById('myPenStartInput');if(pi)pi.value=S.age;
+    document.querySelectorAll('#myPenStartCg .cb').forEach(b=>b.classList.remove('on'));
+    const pb=document.querySelector('#myPenStartCg .cb[data-v="'+S.age+'"]');if(pb)pb.classList.add('on');
+  }
 }
 function updateChildSliderMax(){
   const max=Math.max(0,S.age-18);
@@ -761,6 +769,12 @@ function updateSpouseAge(v){
       document.getElementById('spRetiredSubCg').style.display='none';
       renderStep2();renderPension();
     }
+  }
+  if(S.spPensionStartAge<S.spouseAge){
+    S.spPensionStartAge=S.spouseAge;
+    const pi=document.getElementById('spPenStartInput');if(pi)pi.value=S.spouseAge;
+    document.querySelectorAll('#spPenStartCg .cb').forEach(b=>b.classList.remove('on'));
+    const pb=document.querySelector('#spPenStartCg .cb[data-v="'+S.spouseAge+'"]');if(pb)pb.classList.add('on');
   }
 }
 
@@ -826,6 +840,8 @@ function getSpPensionNet(){
 }
 
 function renderPension(){
+  document.querySelectorAll('#myPenStartCg .cb').forEach(b=>{b.disabled=parseInt(b.dataset.v)<S.age;});
+  document.querySelectorAll('#spPenStartCg .cb').forEach(b=>{b.disabled=parseInt(b.dataset.v)<(S.spouseAge||0);});
   const myRetired=S.workStyle==='retired';
   const spRetired=S.spouseWorkStyle==='retired';
   const myRow=document.getElementById('myPenStartRow');
