@@ -1025,7 +1025,7 @@ function simulate(periods){
 
 function showSuggestIncome(pfx){
   const el=document.getElementById(pfx+'IncomeSuggest');
-  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  if(el){el.style.display='block';setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'center'}),50);}
 }
 function dismissSuggestIncome(pfx){
   const el=document.getElementById(pfx+'IncomeSuggest');
