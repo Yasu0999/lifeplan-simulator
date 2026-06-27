@@ -189,6 +189,11 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .modal-msg{font-size:15px;color:var(--text);line-height:1.7;margin-bottom:20px;font-weight:500}
 .modal-ok{width:100%;padding:12px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
 .modal-ok:hover{background:var(--primary-dark)}
+.modal-btns{display:flex;gap:8px;margin-top:4px}
+.modal-btn-yes{flex:1;padding:12px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:background .2s}
+.modal-btn-yes:hover{background:var(--primary-dark)}
+.modal-btn-no{flex:1;padding:12px;background:white;color:var(--text-light);border:2px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .2s}
+.modal-btn-no:hover{border-color:var(--text-light)}
 .pen-start-block{margin-bottom:14px}
 .pen-start-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .pen-start-row:last-child{margin-bottom:0}
@@ -698,11 +703,15 @@ function validate(n){
       if(S.houseType==='loan'&&!parseFloat(document.getElementById('loanAmt').value)){showAlert('ローン返済額を入力してください。');return false;}
       return true;
     case 5:{
-      const sb=parseFloat(document.getElementById('savBal')?.value)||0;
-      const ib=parseFloat(document.getElementById('invBal')?.value)||0;
-      const ss=parseFloat(document.getElementById('savSave')?.value)||0;
-      const is=parseFloat(document.getElementById('invSave')?.value)||0;
-      if(!sb&&!ib&&!ss&&!is){return confirm('資産・積立がすべて未入力です。\nすべて0円として計算してよろしいですか？');}
+      const assetIds=['savBal','invBal','savSave','invSave'];
+      const hasEmpty=assetIds.some(id=>(document.getElementById(id)?.value??'').trim()==='');
+      if(hasEmpty){
+        showConfirmModal('未入力項目はゼロとして計算されます。\nよろしいですか？',()=>{
+          assetIds.forEach(id=>{const el=document.getElementById(id);if(el&&el.value.trim()==='')el.value='0';});
+          calcAndShow();
+        });
+        return false;
+      }
       return true;
     }
     default:return true;
@@ -1094,6 +1103,14 @@ function customPenStart(pfx,inp){
   if(presetBtn)presetBtn.classList.add('on');
   renderPension();
 }
+function showConfirmModal(msg,onYes){
+  document.getElementById('confirmModalMsg').textContent=msg;
+  document.getElementById('confirmModal').style.display='flex';
+  document.getElementById('confirmModalYes').onclick=()=>{closeConfirmModal();onYes();};
+}
+function closeConfirmModal(){
+  document.getElementById('confirmModal').style.display='none';
+}
 function showAlert(msg){
   document.getElementById('alertModalMsg').textContent=msg;
   document.getElementById('alertModal').style.display='flex';
@@ -1220,6 +1237,15 @@ function switchTab(tab,btn){
   <div class="modal-box">
     <p class="modal-msg" id="alertModalMsg"></p>
     <button class="modal-ok" onclick="closeAlertModal()">OK</button>
+  </div>
+</div>
+<div class="modal-overlay" id="confirmModal" style="display:none" onclick="if(event.target===this)closeConfirmModal()">
+  <div class="modal-box">
+    <p class="modal-msg" id="confirmModalMsg"></p>
+    <div class="modal-btns">
+      <button class="modal-btn-no" onclick="closeConfirmModal()">いいえ</button>
+      <button class="modal-btn-yes" id="confirmModalYes">はい</button>
+    </div>
   </div>
 </div>
 </body>
