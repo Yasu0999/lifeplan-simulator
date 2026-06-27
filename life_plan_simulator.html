@@ -767,7 +767,7 @@ function updateSpouseAge(v){
 function selBtn(sel,btn){document.querySelectorAll(sel+' .cb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
 
 function chooseMyWork(btn){
-  if(btn.dataset.v==='retired'&&S.age<65){alert('年金生活は60歳以上の方が選択できます。');return;}
+  if(btn.dataset.v==='retired'&&S.age<60){showAlert('年金生活は60歳以上の方が選択できます。');return;}
   selBtn('#myWorkCg',btn);S.workStyle=btn.dataset.v;
   document.getElementById('myRetiredSubCg').style.display=(S.workStyle==='retired')?'block':'none';
   renderStep2();renderPension();
@@ -780,7 +780,7 @@ function chooseSpouse(btn){
   renderPension();
 }
 function chooseSpouseWork(btn){
-  if(btn.dataset.v==='retired'&&S.spouseAge<65){alert('年金生活は60歳以上の方が選択できます。');return;}
+  if(btn.dataset.v==='retired'&&S.spouseAge<60){showAlert('年金生活は60歳以上の方が選択できます。');return;}
   selBtn('#spouseWorkCg',btn);S.spouseWorkStyle=btn.dataset.v;
   document.getElementById('spRetiredSubCg').style.display=(S.spouseWorkStyle==='retired')?'block':'none';
   renderStep2();renderPension();
