@@ -327,9 +327,9 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
           <button class="cb on" data-v="auto"   onclick="choosePenMode(this)">自動計算（目安）</button>
           <button class="cb"    data-v="manual" onclick="choosePenMode(this)">金額を手入力</button>
         </div>
-        <div class="pen-start-block">
+        <div class="pen-start-block" id="penStartBlock">
           <div class="fl">年金受給開始年齢</div>
-          <div class="pen-start-row">
+          <div class="pen-start-row" id="myPenStartRow">
             <span class="pen-start-lbl">あなた</span>
             <div class="cg" id="myPenStartCg">
               <button class="cb" data-v="60" onclick="setPenStart('my',60,this)">60歳</button>
@@ -826,17 +826,26 @@ function getSpPensionNet(){
 }
 
 function renderPension(){
+  const myRetired=S.workStyle==='retired';
+  const spRetired=S.spouseWorkStyle==='retired';
+  const myRow=document.getElementById('myPenStartRow');
   const spRow=document.getElementById('spPenStartRow');
-  if(spRow)spRow.style.display=(S.spouse==='yes')?'flex':'none';
+  const block=document.getElementById('penStartBlock');
+  if(myRow)myRow.style.display=myRetired?'none':'flex';
+  if(spRow)spRow.style.display=(S.spouse==='yes'&&!spRetired)?'flex':'none';
+  const showBlock=!myRetired||(S.spouse==='yes'&&!spRetired);
+  if(block)block.style.display=showBlock?'block':'none';
   const el=document.getElementById('pensionDisplay');if(!el)return;
   if(S.pensionMode==='manual'){el.innerHTML='<div class="info-box">下の入力欄に金額をご入力ください。</div>';return;}
   const myPen=pensionNet(S.workStyle,S.myRetiredStyle);
   const mySt=S.myPensionStartAge||65;
-  let h=`<div class="pen-row"><span class="pl">あなた（${mySt}歳から）</span><span class="pa">${S.workStyle?`約${myPen.toFixed(1)}万円/月`:'（働き方を選択してください）'}</span></div>`;
+  const myLabel=myRetired?'あなた（受給中）':`あなた（${mySt}歳から）`;
+  let h=`<div class="pen-row"><span class="pl">${myLabel}</span><span class="pa">${S.workStyle?`約${myPen.toFixed(1)}万円/月`:'（働き方を選択してください）'}</span></div>`;
   if(S.spouse==='yes'&&S.spouseWorkStyle){
     const sp=pensionNet(S.spouseWorkStyle,S.spRetiredStyle);
     const spSt=S.spPensionStartAge||65;
-    h+=`<div class="pen-row"><span class="pl">配偶者（${spSt}歳から）</span><span class="pa">約${sp.toFixed(1)}万円/月</span></div>`;
+    const spLabel=spRetired?'配偶者（受給中）':`配偶者（${spSt}歳から）`;
+    h+=`<div class="pen-row"><span class="pl">${spLabel}</span><span class="pa">約${sp.toFixed(1)}万円/月</span></div>`;
     if(S.workStyle) h+=`<div class="pen-total"><span class="pl">世帯合計</span><span class="pa">約${(myPen+sp).toFixed(1)}万円/月</span></div>`;
   }
   el.innerHTML=h;
