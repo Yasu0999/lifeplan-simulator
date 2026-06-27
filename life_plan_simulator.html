@@ -1120,8 +1120,8 @@ function setPenStart(pfx,age,btn){
 function customPenStart(pfx,inp){
   const age=parseInt(inp.value);
   const minAge=pfx==='my'?S.age:S.spouseAge;
-  if(!age||age<minAge){inp.style.borderColor='var(--primary)';return;}
   inp.style.borderColor='';
+  if(!age||age<minAge){return;}
   if(pfx==='my')S.myPensionStartAge=age;else S.spPensionStartAge=age;
   document.querySelectorAll('#'+pfx+'PenStartCg .cb').forEach(b=>b.classList.remove('on'));
   const presetBtn=document.querySelector('#'+pfx+'PenStartCg .cb[data-v="'+age+'"]');
