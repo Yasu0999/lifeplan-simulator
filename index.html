@@ -164,6 +164,34 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .btn-restart{margin-top:12px;display:inline-block;color:var(--text-light);font-size:13px;cursor:pointer;text-decoration:underline;font-family:'Noto Sans JP',sans-serif;background:none;border:none}
 .btn-back-to-input{margin-top:10px;display:inline-block;color:var(--primary-dark);font-size:14px;font-weight:600;cursor:pointer;border:2px solid var(--primary-light);border-radius:50px;padding:10px 24px;background:white;font-family:'Noto Sans JP',sans-serif;transition:all .2s;}
 .btn-back-to-input:hover{background:#FFF5F0;}
+#fpIntro{display:none}
+#fpIntro.on{display:block}
+.fp-hd{background:linear-gradient(135deg,var(--secondary),#5FB88C);color:white;padding:36px 20px;text-align:center}
+.fp-hd h2{font-size:20px;font-weight:900;margin-bottom:7px;line-height:1.4}
+.fp-hd p{font-size:13px;opacity:.92}
+.fp-body{max-width:640px;margin:0 auto;padding:22px 14px 60px}
+.fp-card{background:white;border-radius:var(--radius-lg);padding:28px 22px;box-shadow:var(--shadow);text-align:center;margin-bottom:18px}
+.fp-avatar{font-size:64px;margin-bottom:10px}
+.fp-name{font-size:24px;font-weight:900;margin-bottom:2px}
+.fp-name span{display:block;font-size:13px;font-weight:500;color:var(--text-light);margin-top:4px}
+.fp-title{font-size:14px;font-weight:700;color:#2E8B6C;margin-bottom:14px}
+.fp-badge-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.fp-badge{background:#F0FFF8;border:1px solid var(--secondary-light);color:#2E8B6C;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+.fp-bio{font-size:13px;color:var(--text-light);line-height:1.9;text-align:left;margin-bottom:18px}
+.fp-quals{background:var(--bg);border-radius:var(--radius);padding:16px 18px;text-align:left}
+.fp-quals-title{font-size:13px;font-weight:700;color:var(--primary-dark);margin-bottom:8px}
+.fp-quals ul{list-style:none;padding:0}
+.fp-quals li{font-size:13px;padding:4px 0 4px 22px;position:relative}
+.fp-quals li::before{content:'✓';position:absolute;left:0;color:var(--secondary);font-weight:900}
+.fp-decision{background:linear-gradient(135deg,#FFF5F0,#FFE8D6);border:2px solid var(--primary-light);border-radius:var(--radius-lg);padding:26px 22px;text-align:center}
+.fp-decision-title{font-size:18px;font-weight:900;margin-bottom:8px}
+.fp-decision-msg{font-size:13px;color:var(--text-light);line-height:1.7;margin-bottom:20px}
+.fp-decision-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.fp-btn-yes,.fp-btn-no{padding:14px 30px;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s;border:none}
+.fp-btn-yes{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;box-shadow:0 6px 20px rgba(255,140,105,.4)}
+.fp-btn-yes:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,140,105,.5)}
+.fp-btn-no{background:white;color:var(--text-light);border:2px solid var(--border)}
+.fp-btn-no:hover{background:#FAFAFA}
 .disclaimer{font-size:11px;color:var(--text-muted);line-height:1.8;padding:16px;background:white;border-radius:var(--radius);margin-bottom:18px;box-shadow:var(--shadow)}
 .disclaimer-title{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:8px}
 .calc-note{background:white;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
@@ -561,6 +589,41 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
   </div>
 </div>
 
+<div id="fpIntro">
+  <div class="fp-hd">
+    <h2>💁‍♀️ 担当ファイナンシャル・プランナーのご紹介</h2>
+    <p>あなたのご相談は、この専門家が担当します</p>
+  </div>
+  <div class="fp-body">
+    <div class="fp-card">
+      <div class="fp-avatar">👩‍💼</div>
+      <div class="fp-name">長井 美奈枝<span>ながい みなえ</span></div>
+      <div class="fp-title">ファイナンシャル・プランナー</div>
+      <div class="fp-badge-row">
+        <span class="fp-badge">金融商品を販売しないFP</span>
+        <span class="fp-badge">相談歴30年以上</span>
+      </div>
+      <p class="fp-bio">1993年、三井住友銀行（当時：さくら銀行）に入行。預金・融資・運用・外国為替など幅広い業務に携わる。2006年、FP事務所に入社し、セミナー講師・個別相談・コンサルティング業務に従事。2017年、日本FP協会「くらしとお金の相談室」相談員を務めたのち、金融商品を販売しないFPとして独立。銀行員時代から数えて30年以上、お金を通して、人生の様々な場面でのお客様の悩みと向き合っている。</p>
+      <div class="fp-quals">
+        <div class="fp-quals-title">保有資格</div>
+        <ul>
+          <li>1級ファイナンシャル・プランニング技能士</li>
+          <li>CFP®</li>
+          <li>終活カウンセラー1級</li>
+        </ul>
+      </div>
+    </div>
+    <div class="fp-decision">
+      <div class="fp-decision-title">ご相談されますか？</div>
+      <p class="fp-decision-msg">「相談する」を選ぶと、お申し込みフォームが開きます。<br>じっくり考えたい方は「相談しない」で結果画面に戻れます。</p>
+      <div class="fp-decision-btns">
+        <button class="fp-btn-no" onclick="fpConsultNo()">相談しない</button>
+        <button class="fp-btn-yes" onclick="fpConsultYes()">相談する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const PENSION_GROSS={employee:15.5,self:5.9,homemaker:5.9,homemaker_income:5.9,retired:0};
 const BONUS_VAL={none:0,lt500:250,b500k:750,b1000k:1500};
@@ -649,6 +712,7 @@ function restartSim(){
   ['rentAmt','loanAmt','loanBonus','loanYrs','loanMaint','ownedMaint'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   // 画面切替
   document.getElementById('results').classList.remove('on');
+  document.getElementById('fpIntro').classList.remove('on');
   document.getElementById('simulator').classList.remove('on');
   document.getElementById('landing').style.display='';
   window.scrollTo(0,0);
@@ -1258,7 +1322,21 @@ function renderCTA(data){
   document.getElementById('ctaIco').textContent=ico;
   document.getElementById('ctaTitle').textContent=title;
   document.getElementById('ctaMsg').textContent=msg;
-  document.getElementById('ctaBtn').onclick=()=>alert('相談窓口は準備中です。\nしばらくお待ちください。');
+  document.getElementById('ctaBtn').onclick=showFpIntro;
+}
+const FP_FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSeVqOnZXanEQcW3KhRGNbFe4XOxs_kJJLwl8cfTfBGsgMkFng/viewform?usp=header';
+function showFpIntro(){
+  document.getElementById('results').classList.remove('on');
+  document.getElementById('fpIntro').classList.add('on');
+  window.scrollTo(0,0);
+}
+function fpConsultYes(){
+  window.open(FP_FORM_URL,'_blank','noopener');
+}
+function fpConsultNo(){
+  document.getElementById('fpIntro').classList.remove('on');
+  document.getElementById('results').classList.add('on');
+  window.scrollTo(0,0);
 }
 
 function switchTab(tab,btn){
