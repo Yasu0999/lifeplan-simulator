@@ -170,7 +170,7 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
   .res-hd{background:#fff!important;color:#000!important;padding:0 0 10px;border-bottom:2px solid #333;text-align:left}
   .res-hd h2,.res-hd p{color:#000!important}
   .tab-pane{display:block!important}
-  #tabGraph{margin-bottom:14px}
+  #tabTable{margin-bottom:14px}
   .calc-note-body{display:block!important}
   .calc-note-arrow{display:none!important}
   .rc2,.disclaimer,.calc-note,.cta-box{box-shadow:none!important;border:1px solid #ccc!important;margin-bottom:12px}
@@ -549,9 +549,9 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
         <button class="chart-nav-btn" id="chartNext" onclick="shiftWindow(1)">▶</button>
         <span class="chart-nav-lbl" id="chartNavLbl"></span>
       </div>
-      <div class="tab-btns"><button class="tab-btn on" onclick="switchTab('graph',this)">📊 グラフ</button><button class="tab-btn" onclick="switchTab('table',this)">📋 キャッシュフロー表</button></div>
-      <div class="tab-pane on" id="tabGraph"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
-      <div class="tab-pane"    id="tabTable"><div class="tbl-wrap"><table class="cf-tbl" id="cfTbl"></table></div></div>
+      <div class="tab-btns"><button class="tab-btn on" onclick="switchTab('table',this)">📋 キャッシュフロー表</button><button class="tab-btn" onclick="switchTab('graph',this)">📊 グラフ</button></div>
+      <div class="tab-pane on" id="tabTable"><div class="tbl-wrap"><table class="cf-tbl" id="cfTbl"></table></div></div>
+      <div class="tab-pane"    id="tabGraph"><div class="chart-wrap"><canvas id="myChart"></canvas></div></div>
     </div>
     <div class="cta-box">
       <div class="cta-ico" id="ctaIco">🌱</div>
@@ -1386,6 +1386,8 @@ function switchTab(tab,btn){
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById(tab==='graph'?'tabGraph':'tabTable').classList.add('on');
+  // グラフは初期非表示だとサイズ0で生成される。表示状態にしてから正しいサイズで再描画する
+  if(tab==='graph')renderChart(getWindowedData());
 }
 function printResult(){
   // グラフを表示状態にしてから印刷（キャンバスが確実に描画された状態にする）
