@@ -158,6 +158,25 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 .tab-btn.on{background:white;color:var(--primary);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .tab-pane{display:none}
 .tab-pane.on{display:block}
+.print-bar{text-align:right;margin-bottom:12px}
+.btn-print{background:#fff;color:var(--primary-dark);border:2px solid var(--primary-light);border-radius:50px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s}
+.btn-print:hover{background:#FFF5F0}
+@media print{
+  @page{margin:12mm}
+  body{background:#fff!important}
+  #landing,#simulator,#fpIntro,.modal-overlay{display:none!important}
+  .print-bar,.period-row,.chart-nav,.tab-btns,.btn-cta,.btn-back-to-input,.btn-restart{display:none!important}
+  #results{display:block!important}
+  .res-hd{background:#fff!important;color:#000!important;padding:0 0 10px;border-bottom:2px solid #333;text-align:left}
+  .res-hd h2,.res-hd p{color:#000!important}
+  .tab-pane{display:block!important}
+  #tabGraph{margin-bottom:14px}
+  .calc-note-body{display:block!important}
+  .calc-note-arrow{display:none!important}
+  .rc2,.disclaimer,.calc-note,.cta-box{box-shadow:none!important;border:1px solid #ccc!important;page-break-inside:avoid}
+  .chart-wrap{page-break-inside:avoid}
+  .cf-tbl tr{page-break-inside:avoid}
+}
 .period-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .period-row span{font-size:12px;color:var(--text-light)}
 .period-row .cb{flex:0 0 auto;min-width:60px;padding:8px 12px;font-size:14px}
@@ -513,6 +532,7 @@ input[type=range].slider::-moz-range-thumb{width:28px;height:28px;border-radius:
 <div id="results">
   <div class="res-hd"><h2>🎉 シミュレーション結果</h2><p id="resHdTxt">あなたの20年間の資産推移をシミュレーションしました</p></div>
   <div class="res-body">
+    <div class="print-bar"><button class="btn-print" onclick="printResult()">🖨 印刷 / PDFで保存</button></div>
     <div class="rc2"><div class="rc2-title" id="sumTitle">📊 40年後のポイント</div><div class="sum-grid" id="sumGrid"></div></div>
     <div class="rc2">
       <div class="rc2-title">📈 資産推移</div>
@@ -1366,6 +1386,12 @@ function switchTab(tab,btn){
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById(tab==='graph'?'tabGraph':'tabTable').classList.add('on');
+}
+function printResult(){
+  // グラフを表示状態にしてから印刷（キャンバスが確実に描画された状態にする）
+  const graphBtn=document.querySelector('.tab-btn');
+  if(graphBtn&&!document.getElementById('tabGraph').classList.contains('on'))switchTab('graph',graphBtn);
+  setTimeout(()=>window.print(),100);
 }
 </script>
 <div class="modal-overlay" id="alertModal" style="display:none" onclick="closeAlertModal(event)">
